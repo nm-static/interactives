@@ -27,6 +27,12 @@ export default defineConfig({
     build: {
       target: "es2022",
       minify: "esbuild",
+      // Sanitize chunk filenames — Netlify esbuild chokes on ! and ~ in names
+      rollupOptions: {
+        output: {
+          sanitizeFileName: (name) => name.replace(/[^\w./-]/g, '_'),
+        },
+      },
     },
     esbuild: {
       target: "es2022",
