@@ -5,14 +5,13 @@ import sitemap from "@astrojs/sitemap";
 
 import react from "@astrojs/react";
 import tailwindcss from "@tailwindcss/vite";
-import netlify from "@astrojs/netlify";
+// Admin API runs as a standalone Netlify Function (see netlify/functions/admin.mts)
 
 // https://astro.build/config
 export default defineConfig({
   site: "https://interactives.neeldhara.com",
   integrations: [mdx(), sitemap(), react()],
   output: "static",
-  adapter: netlify(),
 
   fonts: [
     {
