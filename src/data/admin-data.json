@@ -328,6 +328,14 @@
         "remark": "Removed bg-gradient-to-r from-primary/10 to-secondary/10 from all 6 files: ThreeBankAccounts, GridTilingPuzzle, SunnyLinesPuzzle, DominoRetilingPuzzle, BinarySearchTrick, ZeckendorfSearchTrick. Cards now use plain bg with border-primary/20.",
         "doneDate": "2026-04-17"
       }
+    ],
+    "neighbor-sum-avoidance": [
+      {
+        "id": "474e8061-c7a2-49a2-ba85-a8c57814ea28",
+        "text": "in both default and guided mode, show the arena. to begin with all interactions should be disabled, and enabled as soon as the user clicks the start button (this should set off th etimer too, as it does now).",
+        "done": false,
+        "refId": "T1"
+      }
     ]
   }
 }
