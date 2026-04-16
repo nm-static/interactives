@@ -1,0 +1,67 @@
+---
+import BaseHead from "@/components/BaseHead.astro";
+import { Footer } from "@/components/sections/footer";
+import Navbar from "@/components/sections/navbar";
+import { Badge } from "@/components/ui/badge";
+import { allThemes, getInteractivesByTheme } from "@/lib/interactives";
+
+const themesWithCounts = allThemes.map((theme) => ({
+  ...theme,
+  count: getInteractivesByTheme(theme.title).length,
+}));
+---
+
+<html lang="en">
+  <head>
+    <BaseHead title="Themes" description="Browse interactives by theme." />
+  </head>
+  <body class="flex min-h-screen flex-col antialiased">
+    <Navbar client:load />
+    <main class="w-full flex-1">
+      <div class="container mx-auto px-4 py-8">
+        <div class="mb-10">
+          <h1 class="text-4xl font-bold text-foreground font-display mb-3">
+            Browse by Theme
+          </h1>
+          <p class="text-lg text-muted-foreground max-w-3xl">
+            Explore interactive games, puzzles, and mathematical explorations organized by topic.
+          </p>
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {themesWithCounts.map((theme) => {
+            const isEmpty = theme.count === 0;
+            return isEmpty ? (
+              <div>
+                <div class="rounded-xl border bg-card p-6 shadow-sm h-full opacity-50">
+                  <div class="flex items-baseline justify-between mb-2">
+                    <h3 class="text-lg font-semibold">{theme.title}</h3>
+                    <Badge variant="outline" className="text-xs opacity-60">
+                      Coming soon
+                    </Badge>
+                  </div>
+                  <p class="text-sm text-muted-foreground">{theme.description}</p>
+                </div>
+              </div>
+            ) : (
+              <a href={`/themes/${theme.slug}`} class="group">
+                <div class="rounded-xl border bg-card p-6 shadow-sm transition-shadow hover:shadow-md h-full">
+                  <div class="flex items-baseline justify-between mb-2">
+                    <h3 class="text-lg font-semibold group-hover:text-primary transition-colors">
+                      {theme.title}
+                    </h3>
+                    <Badge variant="secondary" className="text-xs">
+                      {theme.count}
+                    </Badge>
+                  </div>
+                  <p class="text-sm text-muted-foreground">{theme.description}</p>
+                </div>
+              </a>
+            );
+          })}
+        </div>
+      </div>
+    </main>
+    <Footer />
+  </body>
+</html>

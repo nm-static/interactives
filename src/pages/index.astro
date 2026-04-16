@@ -1,0 +1,22 @@
+---
+import { SITE_DESCRIPTION, SITE_TITLE } from "@/consts";
+import BaseHead from "@/components/BaseHead.astro";
+import { Footer } from "@/components/sections/footer";
+import Navbar from "@/components/sections/navbar";
+import HomepageHero from "@/components/HomepageHero";
+---
+
+<html lang="en">
+  <head>
+    <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+  </head>
+  <body class="flex min-h-screen flex-col antialiased">
+    <Navbar client:load />
+    <main class="w-full flex-1">
+      <div class="container mx-auto px-4 py-8">
+        <HomepageHero client:load />
+      </div>
+    </main>
+    <Footer />
+  </body>
+</html>

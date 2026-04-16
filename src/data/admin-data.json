@@ -1,0 +1,333 @@
+{
+  "statusOverrides": {},
+  "notes": {
+    "three-bank-accounts": "Implemented from idea. Three tabs: Play (sandbox), Explore (guided discovery with binary view), Solution (step-through algorithm). Uses KaTeX for math, canvas-confetti for celebrations."
+  },
+  "ideas": [],
+  "todos": {
+    "parity-bits-game": [
+      {
+        "id": "18eede10-150a-4d32-add5-53d75f6ee5af",
+        "text": "bottom labels in the identify flip animation (showing the number of black squares per column) are not properly centered",
+        "done": true,
+        "refId": "T1",
+        "remark": "Wrapped column labels in a flex container matching the main grid layout, added spacer div for row label alignment",
+        "doneDate": "2026-04-15"
+      },
+      {
+        "id": "446d7736-c088-4228-a01e-e7338509f78a",
+        "text": "remove the red border around parity bits",
+        "done": true,
+        "refId": "T2",
+        "remark": "Changed border-primary to border-muted-foreground/40 border-dashed for a subtle dashed style",
+        "doneDate": "2026-04-15"
+      },
+      {
+        "id": "a5da4114-e5dd-4b40-a900-5be45555d07e",
+        "text": "make the red button (like \"Add Parity Bits\" and \"Identify Flip\") have the same size as the normal buttons (right now they are shorter)",
+        "done": true,
+        "refId": "T3",
+        "remark": "Changed all action buttons to size=\"lg\" (h-9) for consistent height, also made reset button full-size instead of icon-only",
+        "doneDate": "2026-04-15"
+      },
+      {
+        "id": "881e2176-f62a-4ed1-ba6a-902bd1aba0a1",
+        "text": "The button issue is not fully fixed from T3. match the corner radius and the height please, so that the transition after I click on \"Add Parity Bits\" is smooth and not jarring.",
+        "done": true,
+        "refId": "T4",
+        "remark": "Added explicit !h-10 !min-h-10 rounded-full !px-6 to the default-variant buttons so they match the outline variant's forced h-10 rounded-full styling.",
+        "doneDate": "2026-04-15"
+      },
+      {
+        "id": "8307b231-916c-4aa7-b3e1-66016af30eca",
+        "text": "The box with instructions to the user should be more prominent, maybe give it a yellow border?",
+        "done": true,
+        "refId": "T5",
+        "remark": "Added yellow border, yellow background tint, and font-medium to the Alert. Dark mode compatible.",
+        "doneDate": "2026-04-15"
+      }
+    ],
+    "three-bank-accounts": [
+      {
+        "id": "ea4f056e-6892-44a6-999b-e0fb4d3db8e1",
+        "text": "in the main play arena, after a transfer, smoothly animate and reorg the account boxes so that the order is low, mid, high (keep account names intact)",
+        "done": true,
+        "refId": "T1",
+        "remark": "Cards now render in sorted order (MIN, MID, MAX left to right) via SortedAccountCards component. Account labels (A/B/C) stay with their data. CSS transition-all duration-500 for smooth reflow.",
+        "doneDate": "2026-04-17"
+      },
+      {
+        "id": "82eed267-eb08-427f-bf55-5af7df019d1c",
+        "text": "Hide binary view button size should be uniform with the rest",
+        "done": true,
+        "refId": "T2",
+        "remark": "Both Show/Hide Binary View and Hint buttons now use variant='outline' size='sm' consistently.",
+        "doneDate": "2026-04-17"
+      },
+      {
+        "id": "6cdfe37f-414b-4068-8355-5e34fdf1d929",
+        "text": "Add MID and MAX labels also",
+        "done": true,
+        "refId": "T3",
+        "remark": "Every account card now shows a Badge with its rank (MIN/MID/MAX) in the header, colored to match the rank.",
+        "doneDate": "2026-04-17"
+      },
+      {
+        "id": "3d0a31ad-382b-4faa-bb0b-d1f466c57b87",
+        "text": "Make sure min is always green, mid is yellow and max is red",
+        "done": true,
+        "refId": "T4",
+        "remark": "Replaced fixed per-account colors (teal/amber/rose) with rank-based colors via RANK_COLORS map: MIN=green, MID=amber, MAX=rose. Colors follow the rank, not the account letter.",
+        "doneDate": "2026-04-17"
+      },
+      {
+        "id": "044479b8-5e33-43c2-a117-434f8c275a7f",
+        "text": "In the list of available transfers instead of using account names use MAX/MID/MIN and write account names in brackets",
+        "done": true,
+        "refId": "T5",
+        "remark": "TransferButton component now shows 'Transfer $8 from MAX (C) → MIN (A) (doubles MIN to $16)' using getRanks() to compute labels dynamically.",
+        "doneDate": "2026-04-17"
+      },
+      {
+        "id": "178d841a-ef21-4fc7-ae90-ab5bcc922dd4",
+        "text": "the solution tab should have the same problem picker ui as the other two",
+        "done": true,
+        "refId": "T6",
+        "remark": "Extracted PresetPicker component shared across all three tabs. Solution tab now uses it with the same inputs, presets (Easy/Medium/Hard/Random), and reset behavior.",
+        "doneDate": "2026-04-17"
+      },
+      {
+        "id": "d88ff98f-d394-433b-9065-8c4548c31351",
+        "text": "add a smooth shuffle animation whenever the min changes in all tabs",
+        "done": true,
+        "refId": "T7",
+        "remark": "SortedAccountCards tracks sort order via useRef. When order changes, applies scale-down + animate-pulse for 500ms. All three tabs use the same component.",
+        "doneDate": "2026-04-17"
+      },
+      {
+        "id": "af7bc89d-b76a-477a-ac3c-a34cd3980548",
+        "text": "Once there are two bank accounts with equal values, declare the game complete [in the play and explore views] so there is no ambiguity in assignment of MIN, MID and MAX labels",
+        "done": true,
+        "refId": "T8",
+        "remark": "Added isGameDone() which checks hasWon OR hasEquality. Play/Explore tabs stop accepting transfers and show a blue message: 'Accounts X and Y are equal ($N)! From here, one transfer empties an account.' Solution tab unchanged (it runs the full algorithm).",
+        "doneDate": "2026-04-17"
+      },
+      {
+        "id": "8ff9ade6-f76b-4c86-92b6-0f845f332bfd",
+        "text": "color-code and bold the text of MID MIN and MAX and add a toggle on the top allowing the user to turn off color-coded text (this toggle should only affect the text).",
+        "done": true,
+        "refId": "T9",
+        "remark": "Added RankText component that renders MIN/MID/MAX in bold with rank colors (green/amber/rose) when colorEnabled=true. ColorToggle switch added to each tab. Toggle only affects inline text labels — card colors stay.",
+        "doneDate": "2026-04-17"
+      },
+      {
+        "id": "b87a2715-f4e4-48ec-b064-39f8209d0229",
+        "text": "In the solution tab there seems to be some misinterpretation about how the transfers are handled. if the bit rep is 1000, the first transfer is not MID to MIN, the last transfer is. can you debug?",
+        "done": true,
+        "refId": "T10",
+        "remark": "Two bugs: (1) bits were processed MSB-first instead of LSB-first — fixed with .reverse(). (2) The inner loop re-sorted accounts on every step, changing the target mid-iteration and breaking the invariant that min strictly decreases. Fixed by locking idxSmallest/idxMiddle/idxLargest at the start of each outer iteration.",
+        "doneDate": "2026-04-17"
+      },
+      {
+        "id": "followup-infinite-loop",
+        "text": "Solution loops forever (13334 steps for Hard). Inner loop re-sorted accounts each step, breaking the algorithm's invariant. See T10.",
+        "done": true,
+        "refId": "T11",
+        "remark": "Root cause was re-sorting inside the inner loop (line 179). Fixed by fixing idxSmallest/idxMiddle/idxLargest from the outer loop's sort. Hard problem (17,23,41) now solves in 13 steps: min goes 17→6→4→1→0.",
+        "doneDate": "2026-04-17"
+      },
+      {
+        "id": "ac6e2722-62eb-4f7b-9a19-ea2652733615",
+        "text": "in the solution tab give me a slider to go over the steps smoothly and quickly",
+        "done": true,
+        "refId": "T12",
+        "remark": "Added an HTML range input slider above the step buttons. Scrubs through all steps instantly. Purple accent color. Shows 'Step X of Y' below.",
+        "doneDate": "2026-04-17"
+      },
+      {
+        "id": "7fc43a02-2927-46ee-beb5-c91816840bf5",
+        "text": "don't start a new iteration just because the min has changed, go through with the full algorithm that you are tracking (eg for 17, 23, 41, when you get to (17, 32, 32), there is one MID to MIN transfer left (because MSB is 1), so honor that. also as you list steps in the purple box, keep track of the binary rep of M/L (floor) on the top right corner and highlight the bit that you are currently on. maybe here for clarity we should write MAX*, MID* and MIN* to indicate that we are referring to statuses at the start of the iteration. also write account names in the step log in brackets. apply these changes also to the explore tab.",
+        "done": true,
+        "refId": "T13",
+        "remark": "Algorithm already processes all bits per iteration (fixed in T10/T11). UI changes: (1) Added iterationLabels to SolutionStep — roles fixed at iteration start. (2) Purple box shows q bits LSB-first with current bit highlighted (purple bg + underline), inactive bits not dimmed. (3) Step log uses MIN*/MID*/MAX* with account names in brackets, e.g. 'MID* (B) → MIN* (A)'. (4) Iteration info card shows 'At start: MIN* (A)=17, MID* (B)=23, MAX* (C)=41'. (5) Explore tab also shows account labels in sorted display: 'MIN (A)=17, MID (B)=23, MAX (C)=41'.",
+        "doneDate": "2026-04-17"
+      },
+      {
+        "id": "d519d533-240e-430f-9322-5dfea43eb67c",
+        "text": "remove the *'s from after MIN, MID, and MAX, it is not helping",
+        "done": true,
+        "refId": "T14",
+        "remark": "Removed all * suffixes from MIN, MID, MAX throughout the solution tab.",
+        "doneDate": "2026-04-17"
+      },
+      {
+        "id": "5975921a-ecf5-48d6-8a1a-5c52a17aadab",
+        "text": "the steps are a bit confusing the follow because the transfer is already done when the step is loaded. maybe make the transfer shown in the step *after* I click step through?",
+        "done": true,
+        "refId": "T15",
+        "remark": "Purple transfer box now shows the *next* step's transfer as a preview ('Next: Transfer $17 from MID (B) → MIN (A)'). Clicking Step Through applies it and shows the result + next preview.",
+        "doneDate": "2026-04-17"
+      },
+      {
+        "id": "0ca398d1-e552-4073-8282-98085e7df82c",
+        "text": "make the red button sizes at par with the others (eg step through is smaller)",
+        "done": true,
+        "refId": "T16",
+        "remark": "Step Through button now has !h-10 !min-h-10 rounded-full !px-6 to match the outline buttons. Other buttons use default outline variant sizing.",
+        "doneDate": "2026-04-17"
+      },
+      {
+        "id": "9a68b239-9ada-46dc-ba1e-3b656ca3e6f6",
+        "text": "where you have the color coded labels toggle, flush right, indicate the MID/MAX/MIN account names for the current iterate",
+        "done": true,
+        "refId": "T17",
+        "remark": "ColorToggle now accepts optional balances prop. Shows flush-right rank assignments like 'MIN=A MID=B MAX=C' with color-coding matching the toggle state. Updated in all three tabs.",
+        "doneDate": "2026-04-17"
+      },
+      {
+        "id": "de62cd70-5c97-401a-9ffa-d02816256f51",
+        "text": "in explore don't stop when account balances are equal, let the user go through that last step themselves. in the last step, when there are two accounts with the same value, label them TIE, and the other one should be either MIN or MAX depending on whether it is larger or smaller than the value of TIE",
+        "done": true,
+        "refId": "T18",
+        "remark": "getRanks() now returns 'TIE' when two accounts are equal (purple color). Explore tab only stops on account=0, not on equality. Play tab still stops on equality. TIE_COLORS added with purple scheme.",
+        "doneDate": "2026-04-17"
+      },
+      {
+        "id": "87042f86-b13e-41d2-bbaa-703d250b83f9",
+        "text": "no need to add MIN=A MID=B MAX=C near color-coded labels in the play tabs, we only need this to track the accounts for the current iterate in explore/solution tabs",
+        "done": true,
+        "refId": "T19",
+        "remark": "Removed balances prop from ColorToggle in PlayTab so rank assignments are hidden. Explore and Solution tabs still show them.",
+        "doneDate": "2026-04-17"
+      },
+      {
+        "id": "bf5656d8-da9a-4228-92f1-c85b71d0217b",
+        "text": "I see MIN* (A)=6, MID* (B)=34, MAX* (C)=41 q = ⌊ M / L ⌋ = ⌊ 34 / 6 ⌋ = 1  --- this is a bug, please fix (the value should be 5)",
+        "done": true,
+        "refId": "T20",
+        "remark": "Bug: the iteration card was reading q/sorted from currentStepData (which is a transfer step with post-transfer balances), not from the iteration header step. Fixed by adding currentIterationHeader useMemo that finds the header step (no transfer) for the current iteration. Card now uses header's q/sorted/labels.",
+        "doneDate": "2026-04-17"
+      },
+      {
+        "id": "8e62fcf8-5c2d-4b7e-95c1-78bb7db7b010",
+        "text": "below the account boxes and above the iteration boxes, add a small rectangular box where you keep track of the evolving min across iterates",
+        "done": true,
+        "refId": "T21",
+        "remark": "Added minHistory useMemo tracking min from each iteration header. Displayed as 'Min across iterations: 17 → 6 → 4 → 1 → 0' with green color and arrow separators.",
+        "doneDate": "2026-04-17"
+      },
+      {
+        "id": "d62b4b79-4b32-4154-baaa-ee5e58b89b09",
+        "text": "the TIE=A MIN=B TIE=C should not show in the solution arena, there you just keep the original iterate's min/min/max labels and the last transfer makes the min go to zero",
+        "done": true,
+        "refId": "T22",
+        "remark": "Solution tab ColorToggle now uses fixedLabels prop from currentIterationHeader.iterationLabels instead of dynamic getRanks(). Shows MIN/MID/MAX from iteration start, never TIE.",
+        "doneDate": "2026-04-17"
+      },
+      {
+        "id": "2b02a715-477d-4625-b953-17a654a59586",
+        "text": "the *'s are still in play in the solution tab, please remove them",
+        "done": true,
+        "refId": "T23",
+        "remark": "All remaining * suffixes were removed globally in T14. Verified no instances remain.",
+        "doneDate": "2026-04-17"
+      },
+      {
+        "id": "093e4b24-b08b-403d-b2aa-48584724903c",
+        "text": "in the play tab, at the very end, let the user make the tie > tie transfer (give only two transfer options, say the tied accounts are A and B, then give the user to push A to B or B to A but nothing else)",
+        "done": true,
+        "refId": "T24",
+        "remark": "Play tab no longer stops on equality. When two accounts are tied, legalTransfers filters to only show transfers between the tied pair. Game only ends when an account hits 0.",
+        "doneDate": "2026-04-17"
+      },
+      {
+        "id": "4674f8fb-6bcd-4f82-82cb-267bd3aea5f4",
+        "text": "some red boxes are still small (eg the box labeled \"hide binary view\" in the explore tab)",
+        "done": true,
+        "refId": "T25",
+        "remark": "Added !h-10 !min-h-10 rounded-full !px-6 to the Binary View toggle button so it matches outline variant sizing in both default and active states.",
+        "doneDate": "2026-04-17"
+      },
+      {
+        "id": "8f6fc544-e4c7-462f-8432-0560586f08b2",
+        "text": "in the solution tab, don't write LSB first, it's not intuitive, but just make the iteration go from LSB to MSB",
+        "done": true,
+        "refId": "T26",
+        "remark": "q bits now display in standard MSB-first (normal binary) order. The iteration still processes LSB to MSB internally — the highlighting index is remapped so the correct bit lights up from right to left. Removed 'LSB first' label, now just says 'q in binary'.",
+        "doneDate": "2026-04-17"
+      },
+      {
+        "id": "c191c156-8b13-4c3e-b404-65ce2bb90a7b",
+        "text": "when we finish an iteration the iteration summary box shows info about the iteration just completed which can be confusing because it is not consistent with the data shown. Maybe just say \"Iteration X complete! Here's a summary:\" instead of just \"Iteration X\" at the top of the box.",
+        "done": true,
+        "refId": "T27",
+        "remark": "Iteration card title now checks if the next step belongs to a different iteration (or doesn't exist). If so, shows 'Iteration X complete! Here's a summary:' instead of just 'Iteration X'.",
+        "doneDate": "2026-04-17"
+      },
+      {
+        "id": "38e4fc94-c70c-4024-a7d3-d31190b07d0a",
+        "text": "In the iteration X complete! box, we say \"At start: ...\" and follow it up with q, M etc. I'd suggest just have \"At start: ...\" followed by \"At end: ...\" (showing the current account status), and nothing else.",
+        "done": true,
+        "refId": "T28",
+        "remark": "When iterationDone is true, the card now shows only 'At start: MIN(A)=17, MID(B)=23, MAX(C)=41' and 'At end: A=6, B=34, C=41'. The q/M=qL+r/binary decomposition only shows while the iteration is in progress.",
+        "doneDate": "2026-04-17"
+      },
+      {
+        "id": "8f97c9cc-460b-4dde-a1d4-21820fb15d49",
+        "text": "remove \"q in binary: BLAH\" from the purple box.",
+        "done": true,
+        "refId": "T29",
+        "remark": "Removed the q binary display and its displayQBits variable from the purple transfer preview card. It now only shows the next transfer description.",
+        "doneDate": "2026-04-17"
+      },
+      {
+        "id": "5851a29d-89df-48f4-a7cd-92d8759a1bc0",
+        "text": "In the box titled \"Iteration History\", in the same line as the title, flushed right, add \"Show Transfers\". when clicked, bring up a modal showing all the transfers",
+        "done": true,
+        "refId": "T30",
+        "remark": "Added a Dialog triggered by 'Show Transfers' ghost button flush-right in the Iteration History card header. Modal lists all transfers up to the current step with index, amount, from/to accounts, and iteration badge. Scrollable.",
+        "doneDate": "2026-04-17"
+      },
+      {
+        "id": "6f0684e3-4fbf-4b86-b79b-119784206a3f",
+        "text": "change the label of \"step through\" to \"next\" and add a button called \"previous\" (which does what you would expect). next should be disabled at the end and previous should be disabled at the start.",
+        "done": true,
+        "refId": "T31",
+        "remark": "Renamed 'Step Through' to 'Next'. Added 'Previous' button before it that decrements currentStep. Previous disabled at step 0, Next disabled at last step. Button order: Restart | Previous | Next | Run to Completion.",
+        "doneDate": "2026-04-17"
+      },
+      {
+        "id": "98755ec7-0be0-4a8b-9a5d-e83ace01e8b0",
+        "text": "Look at the styling of how the problem is presented for \"grid-tiling-puzzle\". Use a similar form/format to showcase the problem statement. and put the three tabs and the rest of it below this heading box. Prominently add the source and a link to the youtube video https://www.youtube.com/watch?v=KErFxmsdrFM with the text \"Watch this video for a beautiful exposition of this solution by Dr. Sucharit Sarkar, an IMO 2001 gold medalist and IMO 2002 silver medalist\".",
+        "done": true,
+        "refId": "T32",
+        "remark": "Replaced plain header with a gradient Card matching GridTilingPuzzle style: gradient bg, large gradient title, '1994 IMO Shortlist' subtitle, problem statement in larger text, YouTube link with play icon. Tabs and interactive content sit below the header card.",
+        "doneDate": "2026-04-17"
+      },
+      {
+        "id": "a6ff05cd-e5af-42d4-b5f8-b06116920325",
+        "text": "add a line break after \"Dr. Sucharit Sarkar,\"",
+        "done": true,
+        "refId": "T33",
+        "remark": "Added <br /> after the comma.",
+        "doneDate": "2026-04-17"
+      },
+      {
+        "id": "a0e6af46-f7c4-4962-97d8-4e5f328e6b06",
+        "text": "the yt icon should be top aligned with the \"Watch this video...\" line",
+        "done": true,
+        "refId": "T34",
+        "remark": "Changed items-center to items-start on the link, added mt-0.5 to the SVG icon.",
+        "doneDate": "2026-04-17"
+      },
+      {
+        "id": "46b94a37-e029-49b4-9d28-5a4affb67085",
+        "text": "remove the gradient background from the headline box on this page and the other pages that have this style",
+        "done": true,
+        "refId": "T35",
+        "remark": "Removed bg-gradient-to-r from-primary/10 to-secondary/10 from all 6 files: ThreeBankAccounts, GridTilingPuzzle, SunnyLinesPuzzle, DominoRetilingPuzzle, BinarySearchTrick, ZeckendorfSearchTrick. Cards now use plain bg with border-primary/20.",
+        "doneDate": "2026-04-17"
+      }
+    ]
+  }
+}

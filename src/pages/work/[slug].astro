@@ -1,0 +1,263 @@
+---
+import { Check } from "lucide-react";
+
+import { ProjectGallery } from "@/components/project-gallery";
+import HatchCta from "@/components/sections/hatch-cta";
+import { buttonVariants } from "@/components/ui/button";
+import DefaultLayout from "@/layouts/DefaultLayout.astro";
+import { getAllProjects, getProjectBySlug } from "@/lib/project-work";
+import { cn } from "@/lib/utils";
+
+export async function getStaticPaths() {
+  return getAllProjects().map((p) => ({
+    params: { slug: p.slug },
+  }));
+}
+
+const { slug } = Astro.params;
+
+if (!slug) {
+  return Astro.redirect("/404");
+}
+
+let project;
+try {
+  project = getProjectBySlug(slug);
+} catch {
+  return Astro.redirect("/404");
+}
+
+if (!project?.slug) {
+  return Astro.redirect("/404");
+}
+
+const heroImage = project.heroImage || project.coverImage;
+const liveUrl = project.liveUrl?.trim() || undefined;
+
+const deliverables = project.deliverables ?? [];
+const gallery = project.gallery;
+
+const workBackClass = cn(
+  buttonVariants({ variant: "outline" }),
+  "mb-6 h-7 w-auto rounded-full px-3 text-xs [&_svg]:size-3.5",
+);
+
+const viewLiveClass = cn(
+  buttonVariants({ variant: "outline" }),
+  "h-9 w-auto rounded-full px-4 text-sm [&_svg]:ml-1 [&_svg]:size-4",
+);
+---
+
+<DefaultLayout title={project.title} description={project.description}>
+  <main class="bg-background">
+    <div class="container pt-6 pb-16 sm:pt-8">
+      <div class="mx-auto w-full">
+        <a href="/work" class={workBackClass}>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="mr-1 shrink-0"
+            aria-hidden="true"
+          >
+            <path d="m12 19-7-7 7-7"></path>
+            <path d="M19 12H5"></path>
+          </svg>
+          Back
+        </a>
+
+        <div
+          class="ring-border/35 relative aspect-video w-full overflow-hidden rounded-2xl ring-1"
+        >
+          <img
+            src={heroImage}
+            alt={project.title}
+            class="absolute inset-0 h-full w-full object-cover"
+            sizes="(min-width: 1024px) 960px, 92vw"
+            loading="eager"
+            decoding="async"
+            fetchpriority="high"
+          />
+        </div>
+
+        <div class="mt-12 flex items-start justify-between gap-6">
+          <div>
+            <h1
+              class="font-display text-3xl leading-[1.1] sm:text-4xl lg:text-5xl"
+            >
+              {project.title}
+            </h1>
+          </div>
+
+          {
+            liveUrl ? (
+              <a
+                href={liveUrl}
+                target="_blank"
+                rel="noreferrer"
+                class={viewLiveClass}
+              >
+                View live
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="shrink-0"
+                  aria-hidden="true"
+                >
+                  <path d="M5 12h14"></path>
+                  <path d="m12 5 7 7-7 7"></path>
+                </svg>
+              </a>
+            ) : null
+          }
+        </div>
+
+        <p class="text-muted-foreground mt-4 text-sm leading-[1.6] sm:text-base">
+          {project.description}
+        </p>
+
+        <div
+          class="border-border/40 mt-10 grid gap-10 border-t pt-10 sm:grid-cols-3 sm:gap-0"
+        >
+          <div
+            class="sm:border-border/40 sm:border-l sm:pl-8 sm:first:border-l-0 sm:first:pl-0"
+          >
+            <img
+              src="/icons/meta/role.svg"
+              alt=""
+              width="28"
+              height="28"
+              aria-hidden="true"
+              class="mb-4 opacity-85 dark:invert"
+            />
+            <div
+              class="text-[10px] font-semibold tracking-[0.28em] text-[var(--hatch-cta)]"
+            >
+              {project.roleLabel ?? "ROLE"}
+            </div>
+            <div class="mt-1 text-base font-semibold">
+              {project.roleValue ?? "Product Designer"}
+            </div>
+          </div>
+
+          <div
+            class="sm:border-border/40 sm:border-l sm:pl-8 sm:first:border-l-0 sm:first:pl-0"
+          >
+            <img
+              src="/icons/meta/timeline.svg"
+              alt=""
+              width="28"
+              height="28"
+              aria-hidden="true"
+              class="mb-4 opacity-85 dark:invert"
+            />
+            <div
+              class="text-[10px] font-semibold tracking-[0.28em] text-[var(--hatch-cta)]"
+            >
+              {project.timelineLabel ?? "TIMELINE"}
+            </div>
+            <div class="mt-1 text-base font-semibold">
+              {project.timelineValue ?? "6 weeks"}
+            </div>
+          </div>
+
+          <div
+            class="sm:border-border/40 sm:border-l sm:pl-8 sm:first:border-l-0 sm:first:pl-0"
+          >
+            <img
+              src="/icons/meta/services.svg"
+              alt=""
+              width="28"
+              height="28"
+              aria-hidden="true"
+              class="mb-4 opacity-85 dark:invert"
+            />
+            <div
+              class="text-[10px] font-semibold tracking-[0.28em] text-[var(--hatch-cta)]"
+            >
+              {project.servicesLabel ?? "SERVICES"}
+            </div>
+            <div class="mt-1 text-base font-semibold">
+              {project.servicesValue ?? "SaaS, Dashboard"}
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="border-border/40 mt-10 grid gap-10 border-t pt-10 sm:grid-cols-2 sm:gap-12"
+        >
+          <div>
+            <h2 class="font-display text-2xl">
+              {project.challengeTitle ?? "The Challenge"}
+            </h2>
+            <p
+              class="text-muted-foreground mt-3 text-sm leading-[1.7] sm:text-base"
+            >
+              {project.challengeBody}
+            </p>
+          </div>
+
+          <div>
+            <h2 class="font-display text-2xl">
+              {project.solutionTitle ?? "Our Solution"}
+            </h2>
+            <p
+              class="text-muted-foreground mt-3 text-sm leading-[1.7] sm:text-base"
+            >
+              {project.solutionBody}
+            </p>
+          </div>
+        </div>
+
+        {
+          deliverables.length > 0 ? (
+            <div class="mt-10">
+              <section class="border-border/40 border-t pt-10">
+                <div class="flex flex-col gap-3">
+                  <img
+                    src="/icons/pricing/project.svg"
+                    alt=""
+                    width="32"
+                    height="32"
+                    class="opacity-70"
+                  />
+                  <h3 class="text-sm font-semibold">Deliverables</h3>
+                </div>
+
+                <div class="mt-6 grid gap-3 sm:grid-cols-2 sm:gap-x-8 sm:gap-y-4">
+                  {deliverables.map((t) => (
+                    <div class="text-muted-foreground flex gap-2.5 text-sm">
+                      <Check className="mt-0.5 size-3.5 shrink-0 text-[var(--hatch-cta)]" />
+                      <span>{t}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </div>
+          ) : null
+        }
+
+        {
+          gallery && gallery.length > 0 ? (
+            <ProjectGallery client:load gallery={gallery} />
+          ) : null
+        }
+      </div>
+    </div>
+
+    <HatchCta />
+  </main>
+</DefaultLayout>

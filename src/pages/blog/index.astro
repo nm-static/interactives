@@ -1,0 +1,86 @@
+---
+import BaseHead from "@/components/BaseHead.astro";
+import { Footer } from "@/components/sections/footer";
+import Navbar from "@/components/sections/navbar";
+import { Badge } from "@/components/ui/badge";
+import { getCollection } from "astro:content";
+
+const posts = (await getCollection("blog"))
+  .sort((a, b) => {
+    const dateA = a.data.date ? new Date(a.data.date).getTime() : 0;
+    const dateB = b.data.date ? new Date(b.data.date).getTime() : 0;
+    return dateB - dateA;
+  });
+---
+
+<html lang="en">
+  <head>
+    <BaseHead title="Blog" description="Updates about new interactives and features." />
+  </head>
+  <body class="flex min-h-screen flex-col antialiased">
+    <Navbar client:load />
+    <main class="w-full flex-1">
+      <div class="container mx-auto px-4 py-8">
+        <div class="flex items-start justify-between gap-4 mb-10">
+          <div>
+            <h1 class="text-4xl font-bold text-foreground font-display mb-3">Blog</h1>
+            <p class="text-lg text-muted-foreground max-w-2xl">
+              Updates about new interactives, features, and behind-the-scenes notes.
+            </p>
+          </div>
+          <a
+            href="/rss.xml"
+            class="shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
+          >
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M6.18 15.64a2.18 2.18 0 0 1 2.18 2.18C8.36 19 7.38 20 6.18 20C5 20 4 19 4 17.82a2.18 2.18 0 0 1 2.18-2.18M4 4.44A15.56 15.56 0 0 1 19.56 20h-2.83A12.73 12.73 0 0 0 4 7.27V4.44m0 5.66a9.9 9.9 0 0 1 9.9 9.9h-2.83A7.07 7.07 0 0 0 4 12.93V10.1z"/>
+            </svg>
+            RSS Feed
+          </a>
+        </div>
+
+        {posts.length === 0 && (
+          <div class="text-center py-12">
+            <p class="text-muted-foreground">No blog posts yet.</p>
+          </div>
+        )}
+
+        <div class="space-y-6">
+          {posts.map((post) => (
+            <a href={`/blog/${post.id}`} class="group block">
+              <article class="rounded-xl border bg-card p-6 shadow-sm transition-shadow hover:shadow-md">
+                <div class="flex items-start justify-between gap-4">
+                  <div class="flex-1 min-w-0">
+                    <h2 class="text-xl font-semibold group-hover:text-primary transition-colors mb-2">
+                      {post.data.title}
+                    </h2>
+                    {post.data.description && (
+                      <p class="text-sm text-muted-foreground line-clamp-2 mb-3">
+                        {post.data.description}
+                      </p>
+                    )}
+                    <div class="flex flex-wrap items-center gap-2">
+                      {post.data.date && (
+                        <span class="text-xs text-muted-foreground">
+                          {new Date(post.data.date).toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })}
+                        </span>
+                      )}
+                      {post.data.tags?.map((tag: string) => (
+                        <Badge variant="secondary" className="text-xs">{tag}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </article>
+            </a>
+          ))}
+        </div>
+      </div>
+    </main>
+    <Footer />
+  </body>
+</html>

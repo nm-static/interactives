@@ -1,0 +1,11 @@
+---
+import HatchCta from "@/components/sections/hatch-cta";
+import ServicesHero from "@/components/sections/hatch-services-hero";
+import { SITE_DESCRIPTION } from "@/consts";
+import DefaultLayout from "@/layouts/DefaultLayout.astro";
+---
+
+<DefaultLayout title="Services" description={SITE_DESCRIPTION}>
+  <ServicesHero client:load />
+  <HatchCta />
+</DefaultLayout>

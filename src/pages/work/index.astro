@@ -1,0 +1,20 @@
+---
+import HatchCta from "@/components/sections/hatch-cta";
+import HatchWorkIndex from "@/components/sections/hatch-work-index";
+import DefaultLayout from "@/layouts/DefaultLayout.astro";
+import { getAllProjects } from "@/lib/project-work";
+
+const projects = await getAllProjects();
+---
+
+<DefaultLayout title="Work">
+  <main class="bg-background">
+    <HatchWorkIndex
+      client:load
+      projects={projects}
+      initialCount={6}
+      pageSize={6}
+    />
+    <HatchCta />
+  </main>
+</DefaultLayout>

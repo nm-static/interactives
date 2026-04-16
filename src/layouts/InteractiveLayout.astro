@@ -1,0 +1,61 @@
+---
+import BaseHead from "@/components/BaseHead.astro";
+import { Footer } from "@/components/sections/footer";
+import Navbar from "@/components/sections/navbar";
+import SocialShare from "@/components/SocialShare";
+import InteractiveBreadcrumb from "@/components/InteractiveBreadcrumb";
+import AdminBar from "@/components/AdminBar";
+import { Toaster } from "@/components/ui/toaster";
+import type { InteractiveStatus } from "@/lib/interactives";
+
+interface Props {
+  title: string;
+  description: string;
+  slug: string;
+  themes: string[];
+  subcategory?: string;
+  tags: string[];
+  status: InteractiveStatus;
+}
+
+const { title, description, slug, themes, subcategory, tags, status } = Astro.props;
+const currentUrl = new URL(Astro.url.pathname, Astro.site).toString();
+const embedUrl = new URL(`/embed/${slug}`, Astro.site).toString();
+---
+
+<html lang="en">
+  <head>
+    <BaseHead title={title} description={description} />
+  </head>
+  <body class="flex min-h-screen flex-col antialiased">
+    <Navbar client:load />
+    <main class="w-full flex-1">
+      <div class="container mx-auto px-4 py-6">
+        <InteractiveBreadcrumb
+          client:load
+          title={title}
+          themes={themes}
+          subcategory={subcategory}
+        />
+
+        <AdminBar client:load slug={slug} currentStatus={status} />
+
+        <!-- Interactive content -->
+        <slot />
+      </div>
+
+      <!-- Share bar -->
+      <div class="container mx-auto px-4 pb-8">
+        <SocialShare
+          client:load
+          title={title}
+          description={description}
+          url={currentUrl}
+          embedUrl={embedUrl}
+        />
+      </div>
+    </main>
+    <Toaster client:load />
+    <Footer />
+  </body>
+</html>

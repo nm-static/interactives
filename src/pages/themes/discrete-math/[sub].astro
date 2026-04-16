@@ -1,0 +1,110 @@
+---
+import BaseHead from "@/components/BaseHead.astro";
+import { Footer } from "@/components/sections/footer";
+import Navbar from "@/components/sections/navbar";
+import AddIdeaForm from "@/components/AddIdeaForm";
+import AdminIdeaCards from "@/components/AdminIdeaCards";
+import AdminDraftCards from "@/components/AdminDraftCards";
+import {
+  getThemeBySlug,
+  getInteractivesBySubcategory,
+} from "@/lib/interactives";
+
+const theme = getThemeBySlug("discrete-math")!;
+
+export function getStaticPaths() {
+  const theme = getThemeBySlug("discrete-math")!;
+  return (theme.subcategories || []).map((sub) => ({
+    params: { sub: sub.slug },
+  }));
+}
+
+const { sub: subSlug } = Astro.params;
+const subcategory = theme.subcategories?.find((s) => s.slug === subSlug);
+
+if (!subcategory) {
+  return Astro.redirect("/404");
+}
+
+const interactives = getInteractivesBySubcategory("Discrete Math", subSlug!);
+---
+
+<html lang="en">
+  <head>
+    <BaseHead title={`${subcategory.title} - Discrete Math`} description={subcategory.description} />
+  </head>
+  <body class="flex min-h-screen flex-col antialiased">
+    <Navbar client:load />
+    <main class="w-full flex-1">
+      <div class="container mx-auto px-4 py-8">
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb" class="mb-6">
+          <ol class="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
+            <li class="inline-flex items-center gap-1">
+              <a href="/" class="transition-colors hover:text-foreground">Home</a>
+            </li>
+            <li role="presentation" aria-hidden="true" class="[&>svg]:size-3.5">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-3.5"><path d="m9 18 6-6-6-6"></path></svg>
+            </li>
+            <li class="inline-flex items-center gap-1">
+              <a href="/themes/discrete-math" class="transition-colors hover:text-foreground">Discrete Math</a>
+            </li>
+            <li role="presentation" aria-hidden="true" class="[&>svg]:size-3.5">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-3.5"><path d="m9 18 6-6-6-6"></path></svg>
+            </li>
+            <li class="inline-flex items-center gap-1">
+              <span class="font-normal text-foreground" role="link" aria-disabled="true" aria-current="page">
+                {subcategory.title}
+              </span>
+            </li>
+          </ol>
+        </nav>
+
+        <!-- Header -->
+        <div class="mb-10">
+          <div class="flex items-start justify-between gap-4">
+            <h1 class="text-4xl font-bold text-foreground font-display mb-3">
+              {subcategory.title}
+            </h1>
+            <AddIdeaForm client:load defaultTheme="Discrete Math" defaultSubcategory={subSlug} />
+          </div>
+          <p class="text-lg text-muted-foreground max-w-3xl">
+            {subcategory.description}
+          </p>
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {interactives.map((item) => (
+            <a href={`/i/${item.slug}?from=discrete-math`} class="group">
+              <div class="rounded-xl border bg-card p-6 shadow-sm transition-shadow hover:shadow-md h-full">
+                <h3 class="text-lg font-semibold group-hover:text-primary transition-colors mb-2">
+                  {item.title}
+                </h3>
+                <p class="text-sm text-muted-foreground line-clamp-3 mb-3">
+                  {item.description}
+                </p>
+                <div class="flex flex-wrap gap-1.5">
+                  {item.tags.slice(0, 3).map((tag) => (
+                    <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs text-muted-foreground">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </a>
+          ))}
+          <AdminDraftCards client:load theme="Discrete Math" subcategory={subSlug} />
+          <AdminIdeaCards client:load theme="Discrete Math" subcategory={subSlug} />
+        </div>
+        {interactives.length === 0 && (
+          <div class="rounded-xl border bg-card p-12 text-center mt-4">
+            <p class="text-lg text-muted-foreground">
+              Interactives for this topic are coming soon.
+            </p>
+          </div>
+        )}
+      </div>
+    </main>
+    <Footer />
+  </body>
+</html>

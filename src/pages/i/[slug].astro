@@ -1,0 +1,36 @@
+---
+import InteractiveLayout from "@/layouts/InteractiveLayout.astro";
+import InteractiveRenderer from "@/components/InteractiveRenderer";
+import {
+  getStaticPaths as getPaths,
+  getInteractiveBySlug,
+} from "@/lib/interactives";
+
+export function getStaticPaths() {
+  return getPaths();
+}
+
+const { slug } = Astro.params;
+
+if (!slug) {
+  return Astro.redirect("/404");
+}
+
+const interactive = getInteractiveBySlug(slug);
+
+if (!interactive) {
+  return Astro.redirect("/404");
+}
+---
+
+<InteractiveLayout
+  title={interactive.title}
+  description={interactive.description}
+  slug={interactive.slug}
+  themes={interactive.themes}
+  subcategory={interactive.subcategory}
+  tags={interactive.tags}
+  status={interactive.status}
+>
+  <InteractiveRenderer client:load slug={interactive.slug} />
+</InteractiveLayout>

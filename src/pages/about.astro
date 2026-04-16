@@ -1,0 +1,15 @@
+---
+import HatchAboutMe from "@/components/sections/hatch-about-me";
+import HatchCta from "@/components/sections/hatch-cta";
+import HatchExperienceGrid from "@/components/sections/hatch-experience-grid";
+import HatchMyStory from "@/components/sections/hatch-my-story";
+import { SITE_DESCRIPTION } from "@/consts";
+import DefaultLayout from "@/layouts/DefaultLayout.astro";
+---
+
+<DefaultLayout title="About" description={SITE_DESCRIPTION}>
+  <HatchAboutMe client:load />
+  <HatchMyStory client:load />
+  <HatchExperienceGrid client:load />
+  <HatchCta />
+</DefaultLayout>

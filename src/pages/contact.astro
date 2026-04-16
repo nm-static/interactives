@@ -1,0 +1,11 @@
+---
+import HatchContact from "@/components/sections/hatch-contact";
+import HatchCta from "@/components/sections/hatch-cta";
+import { SITE_DESCRIPTION } from "@/consts";
+import DefaultLayout from "@/layouts/DefaultLayout.astro";
+---
+
+<DefaultLayout title="Contact" description={SITE_DESCRIPTION}>
+  <HatchContact client:load />
+  <HatchCta />
+</DefaultLayout>

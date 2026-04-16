@@ -1,0 +1,45 @@
+---
+import HatchCta from "@/components/sections/hatch-cta";
+import HatchSelectedProjects from "@/components/sections/hatch-selected-projects";
+import HatchServiceDetail from "@/components/sections/hatch-service-detail-hero";
+import HatchWhatsIncluded from "@/components/sections/hatch-whats-included";
+import DefaultLayout from "@/layouts/DefaultLayout.astro";
+import { getAllServiceSlugs, getService } from "@/lib/get-service";
+import { getAllProjects } from "@/lib/project-work";
+
+export async function getStaticPaths() {
+  const slugs = getAllServiceSlugs();
+  return slugs.map((slug) => ({ params: { slug } }));
+}
+
+const { slug } = Astro.params;
+
+const data = slug ? getService(slug) : null;
+if (!data) {
+  return Astro.redirect("/404");
+}
+
+const { frontmatter } = data;
+const projects = getAllProjects();
+---
+
+<DefaultLayout title={frontmatter.title} description={frontmatter.description}>
+  <HatchServiceDetail
+    client:load
+    title={frontmatter.title}
+    description={frontmatter.description}
+    price={frontmatter.price}
+    priceMeta={frontmatter.priceMeta}
+    primaryCtaLabel={frontmatter.primaryCtaLabel}
+    primaryCtaHref={frontmatter.primaryCtaHref}
+    secondaryCtaLabel={frontmatter.secondaryCtaLabel}
+    secondaryCtaHref={frontmatter.secondaryCtaHref}
+  />
+  <HatchWhatsIncluded client:load hideHeader={true} />
+  <HatchSelectedProjects
+    projects={projects}
+    limit={3}
+    title="Related projects"
+  />
+  <HatchCta />
+</DefaultLayout>

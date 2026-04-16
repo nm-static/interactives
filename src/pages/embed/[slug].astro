@@ -1,0 +1,28 @@
+---
+import EmbedLayout from "@/layouts/EmbedLayout.astro";
+import InteractiveRenderer from "@/components/InteractiveRenderer";
+import {
+  getStaticPaths as getPaths,
+  getInteractiveBySlug,
+} from "@/lib/interactives";
+
+export function getStaticPaths() {
+  return getPaths();
+}
+
+const { slug } = Astro.params;
+
+if (!slug) {
+  return Astro.redirect("/404");
+}
+
+const interactive = getInteractiveBySlug(slug);
+
+if (!interactive) {
+  return Astro.redirect("/404");
+}
+---
+
+<EmbedLayout title={interactive.title} description={interactive.description}>
+  <InteractiveRenderer client:load slug={interactive.slug} />
+</EmbedLayout>

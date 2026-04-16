@@ -1,0 +1,68 @@
+---
+import BaseHead from "@/components/BaseHead.astro";
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<html lang="en">
+  <head>
+    <BaseHead title={title} description={description} />
+    <style>
+      .gs-lite {
+        background-color: #00ff00 !important;
+      }
+      .gs-lite * {
+        background-color: transparent !important;
+        border-color: #000000 !important;
+        color: #000000 !important;
+      }
+      .gs-lite button {
+        background-color: rgba(0, 0, 0, 0.1) !important;
+        border: 2px solid #000000 !important;
+      }
+      .gs-lite button:hover {
+        background-color: rgba(0, 0, 0, 0.2) !important;
+      }
+      .gs-lite input {
+        background-color: rgba(0, 0, 0, 0.05) !important;
+        border: 2px solid #000000 !important;
+      }
+      .gs-dark {
+        background-color: #00ff00 !important;
+      }
+      .gs-dark * {
+        background-color: transparent !important;
+        border-color: #ffffff !important;
+        color: #ffffff !important;
+      }
+      .gs-dark button {
+        background-color: rgba(255, 255, 255, 0.1) !important;
+        border: 2px solid #ffffff !important;
+      }
+      .gs-dark button:hover {
+        background-color: rgba(255, 255, 255, 0.2) !important;
+      }
+      .gs-dark input {
+        background-color: rgba(255, 255, 255, 0.05) !important;
+        border: 2px solid #ffffff !important;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen bg-background antialiased">
+    <div id="embed-root" class="p-4 sm:p-8">
+      <slot />
+    </div>
+    <script is:inline>
+      const params = new URLSearchParams(window.location.search);
+      const mode = params.get('mode');
+      if (mode === 'gs-lite' || mode === 'gs-dark') {
+        document.getElementById('embed-root').classList.add(mode);
+      }
+    </script>
+  </body>
+</html>

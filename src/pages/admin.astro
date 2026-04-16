@@ -1,0 +1,19 @@
+---
+import BaseHead from "@/components/BaseHead.astro";
+import AdminDashboard from "@/components/AdminDashboard";
+---
+
+<html lang="en">
+  <head>
+    <BaseHead title="Admin" description="Interactive management dashboard." />
+    <meta name="robots" content="noindex, nofollow" />
+  </head>
+  <body class="min-h-screen bg-background antialiased">
+    <div class="container mx-auto px-4 py-8">
+      <div class="mb-4">
+        <a href="/" class="text-sm text-muted-foreground hover:text-foreground transition-colors">&larr; Back to site</a>
+      </div>
+      <AdminDashboard client:load />
+    </div>
+  </body>
+</html>

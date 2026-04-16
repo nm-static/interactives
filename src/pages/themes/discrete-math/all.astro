@@ -1,0 +1,121 @@
+---
+import BaseHead from "@/components/BaseHead.astro";
+import { Footer } from "@/components/sections/footer";
+import Navbar from "@/components/sections/navbar";
+import {
+  getThemeBySlug,
+  getInteractivesByTheme,
+} from "@/lib/interactives";
+
+const theme = getThemeBySlug("discrete-math")!;
+const interactives = getInteractivesByTheme("Discrete Math");
+---
+
+<html lang="en">
+  <head>
+    <BaseHead
+      title={`All ${theme.title} Interactives`}
+      description={theme.description}
+    />
+  </head>
+  <body class="flex min-h-screen flex-col antialiased">
+    <Navbar client:load />
+    <main class="w-full flex-1">
+      <div class="container mx-auto px-4 py-8">
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb" class="mb-6">
+          <ol
+            class="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground"
+          >
+            <li class="inline-flex items-center gap-1">
+              <a href="/" class="transition-colors hover:text-foreground"
+                >Home</a
+              >
+            </li>
+            <li
+              role="presentation"
+              aria-hidden="true"
+              class="[&>svg]:size-3.5"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="size-3.5"><path d="m9 18 6-6-6-6"></path></svg
+              >
+            </li>
+            <li class="inline-flex items-center gap-1">
+              <a
+                href="/themes/discrete-math"
+                class="transition-colors hover:text-foreground">Discrete Math</a
+              >
+            </li>
+            <li
+              role="presentation"
+              aria-hidden="true"
+              class="[&>svg]:size-3.5"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="size-3.5"><path d="m9 18 6-6-6-6"></path></svg
+              >
+            </li>
+            <li class="inline-flex items-center gap-1">
+              <span
+                class="font-normal text-foreground"
+                role="link"
+                aria-disabled="true"
+                aria-current="page">All</span
+              >
+            </li>
+          </ol>
+        </nav>
+
+        <!-- Header -->
+        <div class="mb-10">
+          <h1 class="text-4xl font-bold text-foreground font-display mb-3">
+            All {theme.title} Interactives
+          </h1>
+          <p class="text-lg text-muted-foreground max-w-3xl">
+            {interactives.length} interactives across all topics in discrete mathematics.
+          </p>
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {interactives.map((item) => (
+            <a href={`/i/${item.slug}?from=discrete-math`} class="group">
+              <div class="rounded-xl border bg-card p-6 shadow-sm transition-shadow hover:shadow-md h-full">
+                <h3 class="text-lg font-semibold group-hover:text-primary transition-colors mb-2">
+                  {item.title}
+                </h3>
+                <p class="text-sm text-muted-foreground line-clamp-2 mb-3">
+                  {item.description}
+                </p>
+                {item.subcategory && (
+                  <span class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs text-muted-foreground">
+                    {theme.subcategories?.find((s) => s.slug === item.subcategory)?.title}
+                  </span>
+                )}
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+    </main>
+    <Footer />
+  </body>
+</html>

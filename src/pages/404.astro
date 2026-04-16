@@ -1,0 +1,54 @@
+---
+import { Button } from "@/components/ui/button";
+import DefaultLayout from "@/layouts/DefaultLayout.astro";
+---
+
+<DefaultLayout title="404: Not Found" description="Page does not exist">
+  <section
+    id="hatch-404"
+    class="bg-background relative overflow-hidden px-6 lg:px-0"
+  >
+    <div class="pointer-events-none absolute inset-0">
+      <div class="absolute inset-x-0 bottom-0 h-[500px]">
+        <div
+          class="from-features-hero-top-0 to-features-hero-bottom absolute inset-0 bg-gradient-to-b"
+        >
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="relative container flex flex-col items-center justify-center px-4 py-24 text-center sm:py-32 md:py-44"
+    >
+      <div class="mx-auto max-w-2xl">
+        <h1
+          class="text-tagline mb-3 text-sm font-medium tracking-wide uppercase"
+        >
+          Oops!
+        </h1>
+
+        <h2
+          class="text-foreground text-[80px] leading-none font-semibold sm:text-[120px] md:text-[160px]"
+        >
+          404
+        </h2>
+
+        <p class="text-muted-foreground mt-6 text-lg sm:text-xl">
+          The page you’re looking for doesn’t exist or has been moved.
+        </p>
+
+        <div
+          class="mt-10 flex flex-col gap-3 sm:flex-row sm:justify-center sm:gap-4"
+        >
+          <Button asChild className="w-full sm:w-auto">
+            <a href="/">Back to Home</a>
+          </Button>
+
+          <Button asChild variant="outline" className="w-full sm:w-auto">
+            <a href="/contact">Contact Support</a>
+          </Button>
+        </div>
+      </div>
+    </div>
+  </section>
+</DefaultLayout>
