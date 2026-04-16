@@ -5,14 +5,14 @@ import sitemap from "@astrojs/sitemap";
 
 import react from "@astrojs/react";
 import tailwindcss from "@tailwindcss/vite";
-import node from "@astrojs/node";
+import netlify from "@astrojs/netlify";
 
 // https://astro.build/config
 export default defineConfig({
   site: "https://interactives.neeldhara.com",
   integrations: [mdx(), sitemap(), react()],
   output: "static",
-  adapter: node({ mode: "standalone" }),
+  adapter: netlify(),
 
   fonts: [
     {

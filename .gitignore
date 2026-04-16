@@ -28,3 +28,6 @@ Thumbs.db
 bun.lockb
 yarn.lock
 pnpm-lock.yaml
+
+# Local Netlify folder
+.netlify
