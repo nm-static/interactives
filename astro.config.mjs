@@ -24,5 +24,13 @@ export default defineConfig({
 
   vite: {
     plugins: [tailwindcss()],
+    build: {
+      target: "es2022",
+      minify: "esbuild",
+    },
+    esbuild: {
+      target: "es2022",
+      charset: "utf8",
+    },
   },
 });
