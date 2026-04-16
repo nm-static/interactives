@@ -10,17 +10,28 @@ const DEFAULT_DATA = { statusOverrides: {}, notes: {}, ideas: [], todos: {} };
 // --- GitHub API helpers ---
 
 async function githubGetFile(path: string): Promise<{ content: string; sha: string } | null> {
-  if (!GITHUB_TOKEN) return null;
+  if (!GITHUB_TOKEN) {
+    console.log("[admin] No GITHUB_TOKEN set");
+    return null;
+  }
   try {
-    const res = await fetch(
-      `https://api.github.com/repos/${GITHUB_REPO}/contents/${path}?ref=${GITHUB_BRANCH}`,
-      { headers: { Authorization: `Bearer ${GITHUB_TOKEN}`, Accept: "application/vnd.github.v3+json" } }
-    );
-    if (!res.ok) return null;
+    const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${path}?ref=${GITHUB_BRANCH}`;
+    console.log("[admin] Fetching:", url);
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${GITHUB_TOKEN}`, Accept: "application/vnd.github.v3+json" },
+    });
+    if (!res.ok) {
+      console.log("[admin] GitHub API error:", res.status, await res.text().catch(() => ""));
+      return null;
+    }
     const data = await res.json();
     const content = Buffer.from(data.content, "base64").toString("utf-8");
+    console.log("[admin] Read file OK, length:", content.length);
     return { content, sha: data.sha };
-  } catch { return null; }
+  } catch (e) {
+    console.log("[admin] githubGetFile error:", e);
+    return null;
+  }
 }
 
 async function githubPutFile(path: string, content: string, message: string, sha?: string): Promise<boolean> {
