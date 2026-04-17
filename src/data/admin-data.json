@@ -361,6 +361,12 @@
         "text": "in guided mode, show the edges and the numbers, but nothing should be swappable until the user hits start.",
         "done": false,
         "refId": "T5"
+      },
+      {
+        "id": "799be794-b904-4a08-9f04-46d1ae0329a9",
+        "text": "guided mode help text, change \"Numbers are connected by edges if their sum is NOT divisible by 3, 5, or 7.\" to \"Numbers are connected by light grey edges if their sum is NOT divisible by 3, 5, or 7.\" add a line break and add \"Violations around the circle are marked by red arcs, and valid neighbors are connected by a green line.\"",
+        "done": false,
+        "refId": "T6"
       }
     ]
   }
