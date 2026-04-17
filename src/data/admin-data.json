@@ -349,6 +349,12 @@
         "text": "In default mode, show the numbers also, but they should not be draggable until the user hits start",
         "done": false,
         "refId": "T3"
+      },
+      {
+        "id": "e31f7a94-fe26-4649-bf2e-cc83bf551410",
+        "text": "once the user hits start, don't hide the instructions (eg \"Drag numbers from below into the circle slots.  Adjacent numbers that sum to a multiple of 3, 5, or 7 will show a red arc.  Click a filled slot to remove the number.\")",
+        "done": false,
+        "refId": "T4"
       }
     ]
   }
