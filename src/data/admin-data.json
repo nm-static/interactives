@@ -349,6 +349,12 @@
         "text": "In default mode, show the numbers also, but they should not be draggable until the user hits start",
         "done": false,
         "refId": "T3"
+      },
+      {
+        "id": "bd52f257-dae4-46cb-a28c-a1369c18f325",
+        "text": "once the user hits start, don't hide the instructions (eg \"Drag numbers from below into the circle slots. Adjacent numbers that sum to a multiple of 3, 5, or 7 will show a red arc. Click a filled slot to remove the number.\") just disable the slider and toggle (but let all the UI elements be to avoid a jumping effect when start is clicked)",
+        "done": false,
+        "refId": "T4"
       }
     ]
   }
