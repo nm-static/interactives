@@ -337,6 +337,12 @@
         "refId": "T1",
         "remark": "Arena now renders pre-start (greyed with opacity-60 pointer-events-none). Drag/drop/click handlers short-circuit on !isActive as defense-in-depth. Start button still triggers startGame (kicks off timer + populates slots). Added a useEffect to resync slots/availableNumbers when the Numbers slider changes before start, so the pre-start arena always matches the chosen count.",
         "doneDate": "2026-04-17"
+      },
+      {
+        "id": "5ffacb36-9d7e-4e95-8632-deeb606c05a7",
+        "text": "The start button labels should just read start",
+        "done": false,
+        "refId": "T2"
       }
     ]
   }
