@@ -41,6 +41,14 @@ const NeighborSumAvoidance = ({ shareUrl }: NeighborSumAvoidanceProps) => {
     };
   }, [isActive, isComplete]);
 
+  // Keep the pre-start arena in sync with the Numbers slider.
+  useEffect(() => {
+    if (!isActive) {
+      setSlots(Array(numberCount).fill(null));
+      setAvailableNumbers(Array.from({ length: numberCount }, (_, i) => i + 1));
+    }
+  }, [numberCount, isActive]);
+
   const isDivisible = (a: number, b: number) => {
     const sum = a + b;
     return sum % 3 === 0 || sum % 5 === 0 || sum % 7 === 0;
@@ -110,12 +118,13 @@ const NeighborSumAvoidance = ({ shareUrl }: NeighborSumAvoidanceProps) => {
   };
 
   const handleDragStart = (num: number, fromSlot: number | null) => {
+    if (!isActive) return;
     setDraggedNumber(num);
     setDraggedFrom(fromSlot);
   };
 
   const handleDrop = (toSlot: number) => {
-    if (draggedNumber === null) return;
+    if (!isActive || draggedNumber === null) return;
 
     if (mode === 'default') {
       // Default mode: place number in slot
@@ -140,6 +149,7 @@ const NeighborSumAvoidance = ({ shareUrl }: NeighborSumAvoidanceProps) => {
   };
 
   const handleSlotClick = (slotIndex: number) => {
+    if (!isActive) return;
     if (mode === 'default') {
       // Remove from slot in default mode
       if (slots[slotIndex] !== null) {
@@ -284,8 +294,9 @@ const NeighborSumAvoidance = ({ shareUrl }: NeighborSumAvoidanceProps) => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {!isActive ? (
-            <div className="space-y-6">
+          {/* Config controls — shown before start */}
+          {!isActive && (
+            <div className="space-y-4">
               <div className="flex items-center justify-center gap-6">
                 <div className="flex items-center gap-4">
                   <Label htmlFor="mode-switch">Default Mode</Label>
@@ -296,7 +307,7 @@ const NeighborSumAvoidance = ({ shareUrl }: NeighborSumAvoidanceProps) => {
                   />
                   <Label htmlFor="mode-switch">Guided Mode</Label>
                 </div>
-                
+
                 <div className="flex items-center gap-4 min-w-[200px]">
                   <Label htmlFor="number-count">Numbers: {numberCount}</Label>
                   <Slider
@@ -311,70 +322,79 @@ const NeighborSumAvoidance = ({ shareUrl }: NeighborSumAvoidanceProps) => {
                 </div>
               </div>
 
-              <div className="space-y-4 text-center">
-                <div className="text-sm text-muted-foreground space-y-2">
-                  {mode === 'default' ? (
-                    <>
-                      <p>Drag numbers from below into the circle slots.</p>
-                      <p>Adjacent numbers that sum to a multiple of 3, 5, or 7 will show a red arc.</p>
-                      <p>Click a filled slot to remove the number.</p>
-                    </>
-                  ) : (
-                    <>
-                      <p>Numbers are connected by edges if their sum is NOT divisible by 3, 5, or 7.</p>
-                      <p>Click two slots to swap their numbers and form a cycle on the circle's edge.</p>
-                    </>
-                  )}
-                </div>
-                <Button onClick={() => startGame(mode)} size="lg">
-                  Start {mode === 'default' ? 'Default' : 'Guided'} Mode
-                </Button>
+              <div className="text-sm text-muted-foreground space-y-2 text-center">
+                {mode === 'default' ? (
+                  <>
+                    <p>Drag numbers from below into the circle slots.</p>
+                    <p>Adjacent numbers that sum to a multiple of 3, 5, or 7 will show a red arc.</p>
+                    <p>Click a filled slot to remove the number.</p>
+                  </>
+                ) : (
+                  <>
+                    <p>Numbers are connected by edges if their sum is NOT divisible by 3, 5, or 7.</p>
+                    <p>Click two slots to swap their numbers and form a cycle on the circle's edge.</p>
+                  </>
+                )}
               </div>
             </div>
-          ) : (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Timer className="w-4 h-4" />
-                  <span className="font-mono">{formatTime(time)}</span>
-                </div>
-                {mode === 'guided' && (
-                  <div className="text-sm text-muted-foreground">
-                    Swaps: {swaps}
-                  </div>
-                )}
-                <Button variant="outline" size="sm" onClick={restart}>
-                  <RotateCcw className="w-4 h-4 mr-2" />
-                  Restart
-                </Button>
+          )}
+
+          {/* Timer + controls — shown after start */}
+          {isActive && (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Timer className="w-4 h-4" />
+                <span className="font-mono">{formatTime(time)}</span>
               </div>
-
-              {renderCircle()}
-
-              {mode === 'default' && availableNumbers.length > 0 && (
-                <div className="flex flex-wrap justify-center gap-4">
-                  {availableNumbers.map(num => (
-                    <div
-                      key={num}
-                      draggable
-                      onDragStart={() => handleDragStart(num, null)}
-                      className="w-12 h-12 rounded-full border-2 border-primary bg-background flex items-center justify-center text-lg font-bold cursor-move hover:scale-110 transition-transform"
-                    >
-                      {num}
-                    </div>
-                  ))}
+              {mode === 'guided' && (
+                <div className="text-sm text-muted-foreground">
+                  Swaps: {swaps}
                 </div>
               )}
+              <Button variant="outline" size="sm" onClick={restart}>
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Restart
+              </Button>
+            </div>
+          )}
 
-              {isComplete && (
-                <div className="text-center space-y-4">
-                  <p className="text-lg font-semibold text-primary">
-                    🎉 Congratulations! You solved it in {formatTime(time)}
-                    {mode === 'guided' && ` with ${swaps} swaps`}!
-                  </p>
-                  <Button onClick={restart}>Play Again</Button>
+          {/* Arena — always visible */}
+          <div className={!isActive ? 'opacity-60 pointer-events-none' : ''}>
+            {renderCircle()}
+          </div>
+
+          {/* Start button — shown before start */}
+          {!isActive && (
+            <div className="text-center">
+              <Button onClick={() => startGame(mode)} size="lg">
+                Start {mode === 'default' ? 'Default' : 'Guided'} Mode
+              </Button>
+            </div>
+          )}
+
+          {/* Available numbers for default mode */}
+          {isActive && mode === 'default' && availableNumbers.length > 0 && (
+            <div className="flex flex-wrap justify-center gap-4">
+              {availableNumbers.map(num => (
+                <div
+                  key={num}
+                  draggable
+                  onDragStart={() => handleDragStart(num, null)}
+                  className="w-12 h-12 rounded-full border-2 border-primary bg-background flex items-center justify-center text-lg font-bold cursor-move hover:scale-110 transition-transform"
+                >
+                  {num}
                 </div>
-              )}
+              ))}
+            </div>
+          )}
+
+          {isComplete && (
+            <div className="text-center space-y-4">
+              <p className="text-lg font-semibold text-primary">
+                🎉 Congratulations! You solved it in {formatTime(time)}
+                {mode === 'guided' && ` with ${swaps} swaps`}!
+              </p>
+              <Button onClick={restart}>Play Again</Button>
             </div>
           )}
         </CardContent>
