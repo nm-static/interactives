@@ -343,6 +343,12 @@
         "text": "The start button labels should just read start",
         "done": false,
         "refId": "T2"
+      },
+      {
+        "id": "81dc226f-df36-4894-a037-78b298889255",
+        "text": "In default mode, show the numbers also, but they should not be draggable until the user hits start",
+        "done": false,
+        "refId": "T3"
       }
     ]
   }
