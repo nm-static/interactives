@@ -1,4 +1,5 @@
 import type { InteractiveStatus } from "./interactives";
+import staticAdminData from "@/data/admin-data.json";
 
 const ADMIN_KEY = "interactives_admin";
 const NOTES_KEY = "interactives_notes";
@@ -264,23 +265,30 @@ export function getAllTodoCounts(): Record<string, { total: number; done: number
 
 // --- Sync: load server data into localStorage ---
 
+function applyServerData(data: any) {
+  if (data.statusOverrides !== undefined) {
+    localStorage.setItem(STATUS_KEY, JSON.stringify(data.statusOverrides));
+  }
+  if (data.notes !== undefined) {
+    localStorage.setItem(NOTES_KEY, JSON.stringify(data.notes));
+  }
+  if (data.ideas !== undefined) {
+    localStorage.setItem(IDEAS_KEY, JSON.stringify(data.ideas));
+  }
+  if (data.todos !== undefined) {
+    localStorage.setItem(TODOS_KEY, JSON.stringify(data.todos));
+  }
+}
+
 export async function syncFromServer(): Promise<void> {
   try {
     const data = await apiCall("GET");
-    if (data.error) return; // auth failed
-    if (data.statusOverrides !== undefined) {
-      localStorage.setItem(STATUS_KEY, JSON.stringify(data.statusOverrides));
-    }
-    if (data.notes !== undefined) {
-      localStorage.setItem(NOTES_KEY, JSON.stringify(data.notes));
-    }
-    if (data.ideas !== undefined) {
-      localStorage.setItem(IDEAS_KEY, JSON.stringify(data.ideas));
-    }
-    if (data.todos !== undefined) {
-      localStorage.setItem(TODOS_KEY, JSON.stringify(data.todos));
-    }
+    if (data.error) throw new Error("auth failed");
+    applyServerData(data);
   } catch {
-    // Offline or server unavailable — use localStorage as fallback
+    // API unreachable (e.g. `astro dev` without netlify functions) — fall back
+    // to the version of admin-data.json bundled at build time so the admin UI
+    // still reflects the committed state locally.
+    applyServerData(staticAdminData);
   }
 }
