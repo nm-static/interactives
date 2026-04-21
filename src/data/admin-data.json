@@ -4,7 +4,20 @@
     "three-bank-accounts": "Implemented from idea. Three tabs: Play (sandbox), Explore (guided discovery with binary view), Solution (step-through algorithm). Uses KaTeX for math, canvas-confetti for celebrations.",
     "computing-pi": "Implemented from idea. Header row: slider (N runs) | running avg × 4 | Start/Reset. Grid of N tiles, each running an independent first-passage simulation; tiles use a right-aligned mask-fade for the marquee effect on long sequences. Click any stopped tile after completion → Dialog showing the full toss sequence. Safety cap of 1000 tosses per run (first-passage time has infinite expectation)."
   },
-  "ideas": [],
+  "ideas": [
+    {
+      "title": "Kasuti",
+      "description": "Kasuti is a traditional, intricate hand-embroidery from Karnataka, India, dating back to the 7th century, where \"Kai\" (hand) and \"Suti\" (cotton) combine to mean \"handwork with cotton thread\". It is characterized by geometric patterns, including flowers, chariots, and sacred structures, often created with delicate running stitches, typically on dark-toned cotton or silk fabrics. The main idea of kasuti is the following three rules:\n\n- the design looks identical on front and back of the fabric\n- we end where we start\n- no overwriting (ie no stitch happens more than once)\n\nnote that this is equivalent to the following problem: given a graph G (say one with a rectilinear drawing so it matches the kasuti fabric setting) with m edges, double every edge and say one copy is red and one copy is blue; our goal is to find a closed Eulerian tour that covers all 2m edges and alternates between red and blue edges.\n\nYou can find out more about kasuti here: https://www.embroidery.rocksea.org/hand-embroidery/kasuti/kasuti-lesson-1/\n\nI want to do the following: have a play area divided into two parts, left and right, each depicting a N x N grid for a suitable N (I think we can try N = 20 to begin with), corresponding to the front and back of the fabric. On the top of the play area, there should be a scrollable \"reel\" with different kasuti patterns ranging from easy (straight line, steps, simple geometric motifs) to harder/more intricate). \n\nthe user loads a design, which is to say the same design shows up on the left and right grid, center aligned. the user starts tracing, and to begin with the left grid is active, and when they make one stitch, the active play area switches to the right, and so on. only allow the user to reach out to immediate orthogonal neighbors to the grid and that too only when it aligns with a line on the drawing. if a line is already drawn the user should not be allowed to draw over it.\n\nmake the \"thread color\" customizable, but default to black on front (left) and red at the back (right).",
+      "themes": [
+        "Discrete Math"
+      ],
+      "subcategory": "graphs",
+      "status": "idea",
+      "notes": "",
+      "id": "b983985b-e240-4f19-9cb7-f1b31b920f3c",
+      "createdAt": "2026-04-21"
+    }
+  ],
   "todos": {
     "parity-bits-game": [
       {
