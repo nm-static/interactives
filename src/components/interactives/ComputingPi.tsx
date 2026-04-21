@@ -11,6 +11,7 @@ type Toss = 'H' | 'T';
 interface Run {
   sequence: Toss[];
   stopped: boolean;
+  discarded: boolean;
   heads: number;
   tails: number;
   fraction: number | null;
@@ -20,10 +21,26 @@ const MIN_RUNS = 4;
 const MAX_RUNS = 100;
 const DEFAULT_RUNS = 36;
 const TICK_MS = 110;
-const MAX_TOSSES_PER_RUN = 1000; // safety cap; first-passage time has infinite expectation
+const MAX_TOSSES_PER_RUN = 5000; // safety cap; first-passage time has infinite expectation
+const AMBER_STEP = 500; // tosses per amber level
+const AMBER_MAX_LEVEL = 9;
+
+// Amber wash classes, pre-declared so Tailwind's JIT picks them up.
+const AMBER_WASH: Record<number, string> = {
+  0: '',
+  1: 'bg-amber-500/10 border-amber-500/30',
+  2: 'bg-amber-500/20 border-amber-500/40',
+  3: 'bg-amber-500/30 border-amber-500/50',
+  4: 'bg-amber-500/40 border-amber-500/60',
+  5: 'bg-amber-500/50 border-amber-500/70',
+  6: 'bg-amber-500/60 border-amber-500/80',
+  7: 'bg-amber-500/70 border-amber-500/90',
+  8: 'bg-amber-500/80 border-amber-600',
+  9: 'bg-amber-500/90 border-amber-600',
+};
 
 function emptyRun(): Run {
-  return { sequence: [], stopped: false, heads: 0, tails: 0, fraction: null };
+  return { sequence: [], stopped: false, discarded: false, heads: 0, tails: 0, fraction: null };
 }
 
 function stepRun(r: Run): Run {
@@ -33,12 +50,25 @@ function stepRun(r: Run): Run {
   const tails = r.tails + (toss === 'T' ? 1 : 0);
   const sequence = [...r.sequence, toss];
   if (heads > tails) {
-    return { sequence, stopped: true, heads, tails, fraction: heads / sequence.length };
+    return {
+      sequence,
+      stopped: true,
+      discarded: false,
+      heads,
+      tails,
+      fraction: heads / sequence.length,
+    };
   }
   if (sequence.length >= MAX_TOSSES_PER_RUN) {
-    return { sequence, stopped: true, heads, tails, fraction: heads / sequence.length };
+    // Cap hit without the walk crossing above ½ — drop this run so it doesn't bias the average.
+    return { sequence, stopped: true, discarded: true, heads, tails, fraction: null };
   }
-  return { sequence, stopped: false, heads, tails, fraction: null };
+  return { sequence, stopped: false, discarded: false, heads, tails, fraction: null };
+}
+
+function amberLevel(run: Run): number {
+  if (run.stopped) return 0;
+  return Math.min(AMBER_MAX_LEVEL, Math.floor(run.sequence.length / AMBER_STEP));
 }
 
 const ComputingPi: React.FC = () => {
@@ -49,12 +79,13 @@ const ComputingPi: React.FC = () => {
 
   const started = runs.length > 0;
   const allStopped = started && runs.every((r) => r.stopped);
+  const discardedCount = runs.filter((r) => r.discarded).length;
 
   const avgTimes4 = useMemo(() => {
-    const stopped = runs.filter((r) => r.stopped && r.fraction !== null);
-    if (stopped.length === 0) return null;
-    const sum = stopped.reduce((acc, r) => acc + (r.fraction ?? 0), 0);
-    return (sum / stopped.length) * 4;
+    const usable = runs.filter((r) => r.stopped && !r.discarded && r.fraction !== null);
+    if (usable.length === 0) return null;
+    const sum = usable.reduce((acc, r) => acc + (r.fraction ?? 0), 0);
+    return (sum / usable.length) * 4;
   }, [runs]);
 
   // Simulate one toss per active run on every tick.
@@ -163,7 +194,17 @@ const ComputingPi: React.FC = () => {
 
           {allStopped && (
             <p className="text-sm text-center text-muted-foreground">
-              All {runs.length} runs complete. Click any tile to see its full toss sequence.
+              All {runs.length} runs complete
+              {discardedCount > 0 && (
+                <>
+                  {' '}(
+                  <span className="text-destructive">
+                    {discardedCount} discarded after hitting the {MAX_TOSSES_PER_RUN}-toss cap
+                  </span>
+                  )
+                </>
+              )}
+              . Click any tile to see its full toss sequence.
             </p>
           )}
         </CardContent>
@@ -183,12 +224,21 @@ const ComputingPi: React.FC = () => {
                 <span className="font-mono">{selectedRun.heads}</span> heads,{' '}
                 <span className="font-mono">{selectedRun.tails}</span> tails in{' '}
                 <span className="font-mono">{selectedRun.sequence.length}</span>{' '}
-                toss{selectedRun.sequence.length === 1 ? '' : 'es'}. Recorded fraction:{' '}
-                <span className="font-mono font-semibold">
-                  {selectedRun.heads}/{selectedRun.sequence.length} ={' '}
-                  {(selectedRun.fraction ?? 0).toFixed(4)}
-                </span>
-                .
+                toss{selectedRun.sequence.length === 1 ? '' : 'es'}.{' '}
+                {selectedRun.discarded ? (
+                  <span className="text-destructive">
+                    Discarded: hit the {MAX_TOSSES_PER_RUN}-toss cap without heads ever exceeding tails.
+                  </span>
+                ) : (
+                  <>
+                    Recorded fraction:{' '}
+                    <span className="font-mono font-semibold">
+                      {selectedRun.heads}/{selectedRun.sequence.length} ={' '}
+                      {(selectedRun.fraction ?? 0).toFixed(4)}
+                    </span>
+                    .
+                  </>
+                )}
               </DialogDescription>
             )}
           </DialogHeader>
@@ -212,32 +262,55 @@ interface RunTileProps {
 
 const RunTile: React.FC<RunTileProps> = ({ index, run, clickable, onClick }) => {
   const seq = run.sequence.join('');
-  const footer = run.stopped
-    ? `${run.heads}/${run.sequence.length}`
-    : `${run.sequence.length}`;
+  const settledClass = run.discarded
+    ? 'bg-red-50 dark:bg-red-950/30 border-red-500/60'
+    : run.stopped
+      ? 'bg-green-50 dark:bg-green-950/30 border-green-500/60'
+      : AMBER_WASH[amberLevel(run)] || 'bg-card border-border';
+  const footer = run.discarded
+    ? 'discarded'
+    : run.stopped
+      ? `${run.heads}/${run.sequence.length}`
+      : `${run.sequence.length} toss${run.sequence.length === 1 ? '' : 'es'}`;
+  const aria = run.discarded
+    ? `Run ${index + 1}, discarded (cap)`
+    : run.stopped
+      ? `Run ${index + 1}, fraction ${run.heads}/${run.sequence.length}`
+      : `Run ${index + 1}, in progress (${run.sequence.length} tosses)`;
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={!clickable}
-      aria-label={`Run ${index + 1}${run.stopped ? `, fraction ${footer}` : ''}`}
-      className={`rounded-lg border px-2 py-1.5 flex flex-col gap-1 text-left transition-colors ${
-        run.stopped
-          ? 'bg-green-50 dark:bg-green-950/30 border-green-500/60'
-          : 'bg-card border-border'
-      } ${clickable ? 'cursor-pointer hover:border-primary' : 'cursor-default'}`}
+      aria-label={aria}
+      className={`rounded-lg border overflow-hidden flex flex-col text-left transition-colors ${settledClass} ${
+        clickable ? 'cursor-pointer hover:border-primary' : 'cursor-default'
+      }`}
     >
-      <div
-        className="overflow-hidden whitespace-nowrap text-right font-mono text-xs h-4 tracking-wider"
-        style={{
-          maskImage: 'linear-gradient(to right, transparent 0, black 25%)',
-          WebkitMaskImage: 'linear-gradient(to right, transparent 0, black 25%)',
-        }}
-      >
-        {seq || ' '}
+      {/* H / T counters */}
+      <div className="flex justify-between items-center text-[10px] font-mono tabular-nums bg-black/5 dark:bg-white/5 px-2 py-0.5 text-muted-foreground">
+        <span>H:{run.heads}</span>
+        <span>T:{run.tails}</span>
       </div>
-      <div className="font-mono text-[11px] text-muted-foreground tabular-nums">
-        {run.stopped ? footer : `${footer} toss${run.sequence.length === 1 ? '' : 'es'}`}
+
+      {/* Billboard + footer */}
+      <div className="flex flex-col gap-1 px-2 py-1.5 flex-1">
+        <div
+          className="overflow-hidden whitespace-nowrap text-right font-mono text-xs h-4 tracking-wider"
+          style={{
+            maskImage: 'linear-gradient(to right, transparent 0, black 25%)',
+            WebkitMaskImage: 'linear-gradient(to right, transparent 0, black 25%)',
+          }}
+        >
+          {seq || ' '}
+        </div>
+        <div
+          className={`font-mono text-[11px] tabular-nums ${
+            run.discarded ? 'text-destructive italic' : 'text-muted-foreground'
+          }`}
+        >
+          {footer}
+        </div>
       </div>
     </button>
   );

@@ -384,26 +384,34 @@
       {
         "id": "b7be0d32-057f-4902-8b0c-e9fcaa068d5d",
         "text": "change threshold of safety cap to 5000",
-        "done": false,
-        "refId": "T1"
+        "done": true,
+        "refId": "T1",
+        "remark": "MAX_TOSSES_PER_RUN bumped from 1000 to 5000.",
+        "doneDate": "2026-04-21"
       },
       {
         "id": "addb1334-383f-46f4-bfdf-b5177088a694",
         "text": "green for completed, increasingly darker shades of amber for when we exceed 500 tosses and keep going (in units of 500)",
-        "done": false,
-        "refId": "T2"
+        "done": true,
+        "refId": "T2",
+        "remark": "Added amberLevel(run) = min(9, floor(tosses/500)) and an AMBER_WASH lookup from bg-amber-500/10 up to /90 (pre-declared so Tailwind's JIT picks up all 9 class strings). Tiles only wear amber while still running; stopped runs stay green.",
+        "doneDate": "2026-04-21"
       },
       {
         "id": "fca36815-569a-4930-9ef6-9ce6ea140df4",
         "text": "when the safety cap is breached, discard those experiments from the average",
-        "done": false,
-        "refId": "T3"
+        "done": true,
+        "refId": "T3",
+        "remark": "Runs now carry a discarded flag. stepRun sets it when the cap is hit (fraction stays null). avgTimes4 filters on !discarded && fraction !== null. Discarded tiles get a red wash + italic 'discarded' footer, and the all-complete summary and detail dialog call out how many hit the cap.",
+        "doneDate": "2026-04-21"
       },
       {
         "id": "cd4c937f-3f9d-4314-88fb-76ada39a3744",
         "text": "above each of the tiny billboards, add a small grey row, on the left track the number of heads and on the right track the number of tails",
-        "done": false,
-        "refId": "T4"
+        "done": true,
+        "refId": "T4",
+        "remark": "Added a bg-black/5 (dark: bg-white/5) header strip above the billboard showing 'H:{n}' left-aligned and 'T:{n}' right-aligned. Restructured RunTile so the wash class still applies to the whole tile but the header sits flush with the border.",
+        "doneDate": "2026-04-21"
       }
     ]
   }
