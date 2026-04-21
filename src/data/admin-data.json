@@ -392,6 +392,12 @@
         "text": "green for completed, increasingly darker shades of amber for when we exceed 500 tosses and keep going (in units of 500)",
         "done": false,
         "refId": "T2"
+      },
+      {
+        "id": "fca36815-569a-4930-9ef6-9ce6ea140df4",
+        "text": "when the safety cap is breached, discard those experiments from the average",
+        "done": false,
+        "refId": "T3"
       }
     ]
   }
