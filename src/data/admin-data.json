@@ -3,7 +3,19 @@
   "notes": {
     "three-bank-accounts": "Implemented from idea. Three tabs: Play (sandbox), Explore (guided discovery with binary view), Solution (step-through algorithm). Uses KaTeX for math, canvas-confetti for celebrations."
   },
-  "ideas": [],
+  "ideas": [
+    {
+      "title": "Computing Pi",
+      "description": "We propose a different way to use randomness to estimate pi. Toss a coin until the first time the observed proportion of heads exceeds - (that is, until the cumulative number of heads exceeds the cumulative number of tails) and record that fraction; for instance, if the tosses proceeded as T, H, T, H, H you would record the fraction . Now start afresh, again recording a fraction that exceeds . Repeat. As you perform more and more such trials, the\naverage of the fractions will approach pi/4. \n\nMake an interactive demonstrating this. The playground is rectangular as usual. On a small header-style div on top, divide the div into three parts. on left have a slider allowing the user to determine how many runs there are (say N). on the right have a start button. in the middle we keep track of the average.\n\nonce the user picks a number and clicks start, make a grid of N small rectangles and toss coins in each of them one by one (if the sequence exceeds the width of the small rectangle then create a billboard like animation effect --- the user should be ale to click any rectangle [once all simulations are done] and see the full sequence in a clean modal with an explicit close button.\n\nas the simulations are running in the center of the top div, track the average (times 4).\n\nwhen all simulations are done, change the start button to reset, and when the user clicks reset, reset to the starting state.",
+      "themes": [
+        "Miscellany"
+      ],
+      "status": "idea",
+      "notes": "",
+      "id": "4ee4c9c5-7623-488a-ba36-db0c0bb18a8f",
+      "createdAt": "2026-04-21"
+    }
+  ],
   "todos": {
     "parity-bits-game": [
       {
