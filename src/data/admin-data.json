@@ -418,6 +418,12 @@
         "text": "add a source: say \"This method is due to Jim Propp (see [this paper](https://arxiv.org/abs/2602.14487)). I found out about it from a [LinkedIn post](https://www.linkedin.com/feed/update/urn:li:activity:7429512673958043648/) by [Arghya Dutta](https://arghyadutta.github.io/).\" Add this as a footnote at the bottom of the page, centered (and render the markdown in this comment as proper HTML, of course).",
         "done": false,
         "refId": "T5"
+      },
+      {
+        "id": "ab08ba8b-c9ba-4de1-bcc2-392e102b865b",
+        "text": "while simulations are running, just after \"Reset\", add (x/y) where x = number of completed simulations and y = n",
+        "done": false,
+        "refId": "T6"
       }
     ]
   }
