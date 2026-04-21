@@ -1,7 +1,5 @@
 {
-  "statusOverrides": {
-    "eternal-domination-game": "draft"
-  },
+  "statusOverrides": {},
   "notes": {
     "three-bank-accounts": "Implemented from idea. Three tabs: Play (sandbox), Explore (guided discovery with binary view), Solution (step-through algorithm). Uses KaTeX for math, canvas-confetti for celebrations.",
     "computing-pi": "Implemented from idea. Header row: slider (N runs) | running avg × 4 | Start/Reset. Grid of N tiles, each running an independent first-passage simulation; tiles use a right-aligned mask-fade for the marquee effect on long sequences. Click any stopped tile after completion → Dialog showing the full toss sequence. Safety cap of 1000 tosses per run (first-passage time has infinite expectation)."
