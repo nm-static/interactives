@@ -448,8 +448,9 @@
       {
         "id": "3bdae37e-7999-4243-b475-27d69880150a",
         "text": "Make it so that if the user clicks on the average shown, they can toggle between seeing the average and the average multiplied by 4. When showing average, show the value of pi/4 below (instead of pi).",
-        "done": false,
-        "refId": "T9"
+        "done": true,
+        "refId": "T9",
+        "doneDate": "2026-04-21"
       },
       {
         "id": "c614f5c8-dada-438d-96b2-87cf7ae59772",
