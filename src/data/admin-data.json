@@ -386,6 +386,12 @@
         "text": "change threshold of safety cap to 5000",
         "done": false,
         "refId": "T1"
+      },
+      {
+        "id": "addb1334-383f-46f4-bfdf-b5177088a694",
+        "text": "green for completed, increasingly darker shades of amber for when we exceed 500 tosses and keep going (in units of 500)",
+        "done": false,
+        "refId": "T2"
       }
     ]
   }
