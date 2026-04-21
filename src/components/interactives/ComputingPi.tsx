@@ -79,6 +79,7 @@ const ComputingPi: React.FC = () => {
 
   const started = runs.length > 0;
   const allStopped = started && runs.every((r) => r.stopped);
+  const stoppedCount = runs.filter((r) => r.stopped).length;
   const discardedCount = runs.filter((r) => r.discarded).length;
 
   const avgTimes4 = useMemo(() => {
@@ -165,50 +166,83 @@ const ComputingPi: React.FC = () => {
                 <Button size="lg" variant="outline" onClick={handleReset}>
                   <RotateCcw className="w-4 h-4 mr-2" />
                   Reset
+                  {!allStopped && (
+                    <span className="ml-2 font-mono text-xs tabular-nums text-muted-foreground">
+                      ({stoppedCount}/{runs.length})
+                    </span>
+                  )}
                 </Button>
               )}
             </div>
           </div>
 
-          {/* Grid of runs */}
+          {/* Instruction + grid of runs */}
           {started ? (
-            <div
-              className="grid gap-2"
-              style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))' }}
-            >
-              {runs.map((run, idx) => (
-                <RunTile
-                  key={idx}
-                  index={idx}
-                  run={run}
-                  clickable={allStopped}
-                  onClick={() => allStopped && setSelectedIdx(idx)}
-                />
-              ))}
-            </div>
+            <>
+              <p className="text-xs text-center text-muted-foreground">
+                Click on any of the completed runs to view the full sequence.
+              </p>
+              <div
+                className="grid gap-2"
+                style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))' }}
+              >
+                {runs.map((run, idx) => (
+                  <RunTile
+                    key={idx}
+                    index={idx}
+                    run={run}
+                    clickable={run.stopped}
+                    onClick={() => run.stopped && setSelectedIdx(idx)}
+                  />
+                ))}
+              </div>
+            </>
           ) : (
             <div className="text-center text-muted-foreground py-10">
               Pick a number of runs and press <span className="font-medium">Start</span>.
             </div>
           )}
 
-          {allStopped && (
+          {allStopped && discardedCount > 0 && (
             <p className="text-sm text-center text-muted-foreground">
-              All {runs.length} runs complete
-              {discardedCount > 0 && (
-                <>
-                  {' '}(
-                  <span className="text-destructive">
-                    {discardedCount} discarded after hitting the {MAX_TOSSES_PER_RUN}-toss cap
-                  </span>
-                  )
-                </>
-              )}
-              . Click any tile to see its full toss sequence.
+              <span className="text-destructive">
+                {discardedCount} run{discardedCount === 1 ? '' : 's'} discarded after hitting the {MAX_TOSSES_PER_RUN}-toss cap.
+              </span>
             </p>
           )}
         </CardContent>
       </Card>
+
+      <footer className="mt-6 text-center text-xs text-muted-foreground">
+        This method is due to Jim Propp (see{' '}
+        <a
+          href="https://arxiv.org/abs/2602.14487"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline underline-offset-2 hover:text-foreground"
+        >
+          this paper
+        </a>
+        ). I found out about it from a{' '}
+        <a
+          href="https://www.linkedin.com/feed/update/urn:li:activity:7429512673958043648/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline underline-offset-2 hover:text-foreground"
+        >
+          LinkedIn post
+        </a>{' '}
+        by{' '}
+        <a
+          href="https://arghyadutta.github.io/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline underline-offset-2 hover:text-foreground"
+        >
+          Arghya Dutta
+        </a>
+        .
+      </footer>
 
       <Dialog
         open={selectedIdx !== null}

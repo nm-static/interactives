@@ -416,26 +416,34 @@
       {
         "id": "0e5f38ac-efb5-434a-a6fd-9eb7878da97e",
         "text": "add a source: say \"This method is due to Jim Propp (see [this paper](https://arxiv.org/abs/2602.14487)). I found out about it from a [LinkedIn post](https://www.linkedin.com/feed/update/urn:li:activity:7429512673958043648/) by [Arghya Dutta](https://arghyadutta.github.io/).\" Add this as a footnote at the bottom of the page, centered (and render the markdown in this comment as proper HTML, of course).",
-        "done": false,
-        "refId": "T5"
+        "done": true,
+        "refId": "T5",
+        "remark": "Added a <footer> after the Card (outside so it reads as a page-level footnote). Centered text-xs text-muted-foreground; the three markdown links render as <a> with underline underline-offset-2, target=_blank rel=noopener noreferrer.",
+        "doneDate": "2026-04-21"
       },
       {
         "id": "ab08ba8b-c9ba-4de1-bcc2-392e102b865b",
         "text": "while simulations are running, just after \"Reset\", add (x/y) where x = number of completed simulations and y = n",
-        "done": false,
-        "refId": "T6"
+        "done": true,
+        "refId": "T6",
+        "remark": "Reset button now renders a mono ({stoppedCount}/{n}) suffix while any run is still active. Suffix hides once allStopped so the completed-state button stays clean.",
+        "doneDate": "2026-04-21"
       },
       {
         "id": "b8bc7e4e-4ad6-428a-9620-7b3a7a354420",
         "text": "for completed billboards, it should be possible for the user to click on them and view the full sequence in a modal, even while other sims are running",
-        "done": false,
-        "refId": "T7"
+        "done": true,
+        "refId": "T7",
+        "remark": "Per-tile clickable is now driven by run.stopped instead of allStopped. Stopped runs are immutable so the Dialog stays accurate while other tiles keep ticking.",
+        "doneDate": "2026-04-21"
       },
       {
         "id": "e3faf449-8698-437a-a690-48a677c687f6",
         "text": "add a note just below the grey header box and above the row of tiny billboards saying: \"Click on any of the completed runs to view the full sequence.\"",
-        "done": false,
-        "refId": "T8"
+        "done": true,
+        "refId": "T8",
+        "remark": "Small text-xs text-muted-foreground note sits between the header Card block and the tile grid whenever runs exist. The old 'All runs complete' banner is now only shown when discarded runs need flagging, since the top note already covers the 'click to view' point.",
+        "doneDate": "2026-04-21"
       }
     ]
   }
