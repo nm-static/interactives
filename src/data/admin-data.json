@@ -430,6 +430,12 @@
         "text": "for completed billboards, it should be possible for the user to click on them and view the full sequence in a modal, even while other sims are running",
         "done": false,
         "refId": "T7"
+      },
+      {
+        "id": "e3faf449-8698-437a-a690-48a677c687f6",
+        "text": "add a note just below the grey header box and above the row of tiny billboards saying: \"Click on any of the completed runs to view the full sequence.\"",
+        "done": false,
+        "refId": "T8"
       }
     ]
   }
