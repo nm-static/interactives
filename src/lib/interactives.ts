@@ -704,7 +704,7 @@ export const allInteractives: Interactive[] = [
     themes: ["Miscellany"],
     dateAdded: "2025-01-22",
     hasGreenScreen: false,
-    status: "published" as const,
+    status: "draft" as const,
   },
   {
     slug: "computing-pi",
