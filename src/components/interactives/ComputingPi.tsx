@@ -295,7 +295,7 @@ const RunTile: React.FC<RunTileProps> = ({ index, run, clickable, onClick }) => 
         {run.sequence.length > 0 && (
           <span
             aria-hidden="true"
-            className="pointer-events-none absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-foreground"
+            className="pointer-events-none absolute bottom-0 -translate-x-1/2 translate-y-1/2 w-1.5 h-1.5 rounded-full bg-foreground"
             style={{ left: `${(run.heads / run.sequence.length) * 100}%` }}
           />
         )}
