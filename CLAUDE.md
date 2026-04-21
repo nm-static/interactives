@@ -45,7 +45,7 @@ The admin API (`applyStatusChange` / `applyDelete` in `netlify/functions/admin.m
 
 ### Admin system
 
-Client code in `src/lib/admin.ts` keeps state in `localStorage` (auth flag, notes, status overrides, ideas, todos) and mirrors every write to `POST /api/admin`. The password is hard-coded (`ADMIN_PASSWORD = "yukti2025"` both client- and server-side; the server allows override via env var) — this is a personal tool, not a real auth boundary.
+Client code in `src/lib/admin.ts` keeps state in `localStorage` (auth flag, notes, status overrides, ideas, todos) and mirrors every write to `POST /api/admin`. The admin password is hard-coded in `src/lib/admin.ts` and echoed in the Netlify function (override via the `ADMIN_PASSWORD` env var in production) — this is a personal tool, not a real auth boundary. Don't add secrets here.
 
 The Netlify function persists state by committing to this same repo via the GitHub Contents API:
 - `src/data/admin-data.json` — notes, status overrides, ideas, todos. Bundled at build time and imported as a fallback when the API is unreachable (e.g. under `astro dev`).
@@ -62,6 +62,39 @@ Interactives marked `hasGreenScreen: true` can be wrapped in `GreenScreenWrapper
 TS path aliases from `tsconfig.json`: `@/*` → `src/*`, plus `@components/*`, `@layouts/*`, `@lib/*`. shadcn aliases in `components.json` point components to `@/components`, utils to `@/lib/utils` (the `cn()` helper). Tailwind 4 is wired via `@tailwindcss/vite` (no tailwind.config.js); design tokens live in `src/styles/global.css`. Icon library is `lucide-react`.
 
 ESLint enforces `simple-import-sort` — imports and exports get auto-sorted on `lint:fix`.
+
+## Design & aesthetics
+
+The site has a distinctive editorial-meets-playful feel: serif display type over restrained neutrals, one warm red-orange accent, and generous whitespace. Interactives are the payoff — they should feel polished and a little delightful, not enterprise-CRUD.
+
+**Reach for shadcn before hand-rolling.** `Card` / `CardHeader` / `CardTitle` / `CardContent` is the canonical container for an interactive's sections. `Button`, `Badge`, `Alert`, `Tabs`, `Dialog`, `Slider`, `Switch`, `Tooltip`, `Input`, `Label` are already themed and wired up — use them. Edit `src/components/ui/*` only with deliberate reason (ESLint ignores this dir because it's shadcn-generated).
+
+**Always use design tokens, never raw hex.** Colors live as CSS variables in `src/styles/global.css` and are exposed as Tailwind utilities:
+- Surfaces: `bg-background`, `bg-card`, `bg-muted`, `bg-accent`
+- Text: `text-foreground`, `text-muted-foreground`
+- Brand accent: `bg-primary` / `text-primary` / `text-primary-foreground` — use sparingly, for true calls-to-action
+- Borders: `border-border`
+- Status: `text-destructive`, `text-success`, chart colors `chart-1`..`chart-5`
+
+Colors are authored in OKLCH. If you need a shade that isn't in the palette, add a token rather than inlining.
+
+**Dark mode is mandatory.** The `.dark` class on `<html>` flips the tokens. Any literal tailwind color (`bg-green-100`, `text-amber-700`, etc.) *must* come with a `dark:` counterpart — see `ThreeBankAccounts.tsx`'s `RANK_COLORS` for the pattern. Better yet, lean on design tokens so dark mode is automatic.
+
+**Typography.** Castoro (serif) for `h1`/`h2` via `.font-display`; Imprima/Geist (sans) for body and `h3+`. This pairing is load-bearing for the editorial feel — don't swap `h1` to sans on a whim. The `container` utility caps at 1200px; `container-sm` caps at 960px for denser reading layouts.
+
+**Radii.** Base `--radius` is `0.625rem`, exposed as `rounded-sm` → `rounded-4xl` on the Tailwind scale. Cards and panels are typically `rounded-xl`; pill buttons/badges are `rounded-full`; small chips are `rounded-md`.
+
+**Motion and delight.** `framer-motion` for layout/presence animations, `canvas-confetti` for win states and discovery moments, `katex` for math (`katex/dist/katex.min.css` must be imported where used). `prefers-reduced-motion` is honored globally in `global.css` — you don't need to guard individual transitions, but don't gate critical state changes behind animation either.
+
+**Interactive layout patterns.** Looking across the folder, published interactives tend to:
+- Open with a short framing `Alert` or intro card explaining the premise
+- Put the play area center stage, controls below or to the side
+- Use `Tabs` to separate modes (e.g. *Play / Explore / Solution* in `ThreeBankAccounts`)
+- Use `Badge` for status, tags, and hint chips
+- Reset with a `RotateCcw` icon button; celebrate wins with confetti + a toast (`sonner` is wired up)
+- Stay responsive — test at mobile widths, since these embed into blog posts and videos
+
+**Taste defaults.** Prefer fewer, cleaner controls over exhaustive settings. If a new feature needs an options panel, that's a signal to reconsider the UX. When in doubt, match the visual weight and density of an existing, well-regarded interactive in the same theme rather than inventing a new idiom.
 
 ### Build gotchas
 
