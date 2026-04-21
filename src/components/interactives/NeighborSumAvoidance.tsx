@@ -1,12 +1,13 @@
-import { useState, useEffect, useRef } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import confetti from 'canvas-confetti';
+import { RotateCcw,Timer } from 'lucide-react';
+import { useEffect, useRef,useState } from 'react';
+import { toast } from 'sonner';
+
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { Timer, RotateCcw } from 'lucide-react';
-import confetti from 'canvas-confetti';
-import { toast } from 'sonner';
+import { Switch } from '@/components/ui/switch';
 
 interface NeighborSumAvoidanceProps {
   shareUrl?: string;
@@ -41,13 +42,22 @@ const NeighborSumAvoidance = ({ shareUrl }: NeighborSumAvoidanceProps) => {
     };
   }, [isActive, isComplete]);
 
-  // Keep the pre-start arena in sync with the Numbers slider.
+  // Keep the pre-start arena populated so users can preview the mode before starting.
+  // Default mode shows empty slots + draggable numbers (disabled). Guided mode shows
+  // a shuffled arrangement so edges/violations are visible right away.
   useEffect(() => {
-    if (!isActive) {
+    if (isActive) return;
+    if (mode === 'default') {
       setSlots(Array(numberCount).fill(null));
       setAvailableNumbers(Array.from({ length: numberCount }, (_, i) => i + 1));
+    } else {
+      const shuffled = Array.from({ length: numberCount }, (_, i) => i + 1).sort(
+        () => Math.random() - 0.5
+      );
+      setSlots(shuffled);
+      setAvailableNumbers([]);
     }
-  }, [numberCount, isActive]);
+  }, [numberCount, mode, isActive]);
 
   const isDivisible = (a: number, b: number) => {
     const sum = a + b;
@@ -90,31 +100,20 @@ const NeighborSumAvoidance = ({ shareUrl }: NeighborSumAvoidanceProps) => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const startGame = (selectedMode: 'default' | 'guided') => {
-    setMode(selectedMode);
+  const startGame = () => {
     setIsActive(true);
     setTime(0);
     setSwaps(0);
     setIsComplete(false);
-
-    if (selectedMode === 'default') {
-      setSlots(Array(numberCount).fill(null));
-      setAvailableNumbers(Array.from({ length: numberCount }, (_, i) => i + 1));
-    } else {
-      // Guided mode: random arrangement
-      const shuffled = Array.from({ length: numberCount }, (_, i) => i + 1).sort(() => Math.random() - 0.5);
-      setSlots(shuffled);
-      setAvailableNumbers([]);
-    }
+    // Slots/availableNumbers are already primed by the pre-start useEffect.
   };
 
   const restart = () => {
     setIsActive(false);
     setIsComplete(false);
-    setSlots(Array(numberCount).fill(null));
-    setAvailableNumbers(Array.from({ length: numberCount }, (_, i) => i + 1));
     setTime(0);
     setSwaps(0);
+    // The pre-start useEffect will re-populate slots for the current mode.
   };
 
   const handleDragStart = (num: number, fromSlot: number | null) => {
@@ -294,50 +293,51 @@ const NeighborSumAvoidance = ({ shareUrl }: NeighborSumAvoidanceProps) => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Config controls — shown before start */}
-          {!isActive && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-center gap-6">
-                <div className="flex items-center gap-4">
-                  <Label htmlFor="mode-switch">Default Mode</Label>
-                  <Switch
-                    id="mode-switch"
-                    checked={mode === 'guided'}
-                    onCheckedChange={(checked) => setMode(checked ? 'guided' : 'default')}
-                  />
-                  <Label htmlFor="mode-switch">Guided Mode</Label>
-                </div>
-
-                <div className="flex items-center gap-4 min-w-[200px]">
-                  <Label htmlFor="number-count">Numbers: {numberCount}</Label>
-                  <Slider
-                    id="number-count"
-                    min={5}
-                    max={15}
-                    step={1}
-                    value={[numberCount]}
-                    onValueChange={(value) => setNumberCount(value[0])}
-                    className="w-24"
-                  />
-                </div>
+          {/* Config controls — always visible, slider/toggle disabled once active */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-center gap-6">
+              <div className="flex items-center gap-4">
+                <Label htmlFor="mode-switch">Default Mode</Label>
+                <Switch
+                  id="mode-switch"
+                  checked={mode === 'guided'}
+                  onCheckedChange={(checked) => setMode(checked ? 'guided' : 'default')}
+                  disabled={isActive}
+                />
+                <Label htmlFor="mode-switch">Guided Mode</Label>
               </div>
 
-              <div className="text-sm text-muted-foreground space-y-2 text-center">
-                {mode === 'default' ? (
-                  <>
-                    <p>Drag numbers from below into the circle slots.</p>
-                    <p>Adjacent numbers that sum to a multiple of 3, 5, or 7 will show a red arc.</p>
-                    <p>Click a filled slot to remove the number.</p>
-                  </>
-                ) : (
-                  <>
-                    <p>Numbers are connected by edges if their sum is NOT divisible by 3, 5, or 7.</p>
-                    <p>Click two slots to swap their numbers and form a cycle on the circle's edge.</p>
-                  </>
-                )}
+              <div className="flex items-center gap-4 min-w-[200px]">
+                <Label htmlFor="number-count">Numbers: {numberCount}</Label>
+                <Slider
+                  id="number-count"
+                  min={5}
+                  max={15}
+                  step={1}
+                  value={[numberCount]}
+                  onValueChange={(value) => setNumberCount(value[0])}
+                  className="w-24"
+                  disabled={isActive}
+                />
               </div>
             </div>
-          )}
+
+            <div className="text-sm text-muted-foreground space-y-2 text-center">
+              {mode === 'default' ? (
+                <>
+                  <p>Drag numbers from below into the circle slots.</p>
+                  <p>Adjacent numbers that sum to a multiple of 3, 5, or 7 will show a red arc.</p>
+                  <p>Click a filled slot to remove the number.</p>
+                </>
+              ) : (
+                <>
+                  <p>Numbers are connected by light grey edges if their sum is NOT divisible by 3, 5, or 7.</p>
+                  <p>Violations around the circle are marked by red arcs, and valid neighbors are connected by a green line.</p>
+                  <p>Click two slots to swap their numbers and form a cycle on the circle's edge.</p>
+                </>
+              )}
+            </div>
+          </div>
 
           {/* Timer + controls — shown after start */}
           {isActive && (
@@ -366,21 +366,24 @@ const NeighborSumAvoidance = ({ shareUrl }: NeighborSumAvoidanceProps) => {
           {/* Start button — shown before start */}
           {!isActive && (
             <div className="text-center">
-              <Button onClick={() => startGame(mode)} size="lg">
-                Start {mode === 'default' ? 'Default' : 'Guided'} Mode
+              <Button onClick={startGame} size="lg">
+                Start
               </Button>
             </div>
           )}
 
-          {/* Available numbers for default mode */}
-          {isActive && mode === 'default' && availableNumbers.length > 0 && (
+          {/* Available numbers for default mode — always visible pre/post start,
+              but only draggable once active */}
+          {mode === 'default' && availableNumbers.length > 0 && (
             <div className="flex flex-wrap justify-center gap-4">
               {availableNumbers.map(num => (
                 <div
                   key={num}
-                  draggable
-                  onDragStart={() => handleDragStart(num, null)}
-                  className="w-12 h-12 rounded-full border-2 border-primary bg-background flex items-center justify-center text-lg font-bold cursor-move hover:scale-110 transition-transform"
+                  draggable={isActive}
+                  onDragStart={isActive ? () => handleDragStart(num, null) : undefined}
+                  className={`w-12 h-12 rounded-full border-2 border-primary bg-background flex items-center justify-center text-lg font-bold transition-transform ${
+                    isActive ? 'cursor-move hover:scale-110' : 'cursor-not-allowed opacity-60'
+                  }`}
                 >
                   {num}
                 </div>

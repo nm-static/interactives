@@ -1,21 +1,10 @@
 {
   "statusOverrides": {},
   "notes": {
-    "three-bank-accounts": "Implemented from idea. Three tabs: Play (sandbox), Explore (guided discovery with binary view), Solution (step-through algorithm). Uses KaTeX for math, canvas-confetti for celebrations."
+    "three-bank-accounts": "Implemented from idea. Three tabs: Play (sandbox), Explore (guided discovery with binary view), Solution (step-through algorithm). Uses KaTeX for math, canvas-confetti for celebrations.",
+    "computing-pi": "Implemented from idea. Header row: slider (N runs) | running avg × 4 | Start/Reset. Grid of N tiles, each running an independent first-passage simulation; tiles use a right-aligned mask-fade for the marquee effect on long sequences. Click any stopped tile after completion → Dialog showing the full toss sequence. Safety cap of 1000 tosses per run (first-passage time has infinite expectation)."
   },
-  "ideas": [
-    {
-      "title": "Computing Pi",
-      "description": "We propose a different way to use randomness to estimate pi. Toss a coin until the first time the observed proportion of heads exceeds - (that is, until the cumulative number of heads exceeds the cumulative number of tails) and record that fraction; for instance, if the tosses proceeded as T, H, T, H, H you would record the fraction . Now start afresh, again recording a fraction that exceeds . Repeat. As you perform more and more such trials, the\naverage of the fractions will approach pi/4. \n\nMake an interactive demonstrating this. The playground is rectangular as usual. On a small header-style div on top, divide the div into three parts. on left have a slider allowing the user to determine how many runs there are (say N). on the right have a start button. in the middle we keep track of the average.\n\nonce the user picks a number and clicks start, make a grid of N small rectangles and toss coins in each of them one by one (if the sequence exceeds the width of the small rectangle then create a billboard like animation effect --- the user should be ale to click any rectangle [once all simulations are done] and see the full sequence in a clean modal with an explicit close button.\n\nas the simulations are running in the center of the top div, track the average (times 4).\n\nwhen all simulations are done, change the start button to reset, and when the user clicks reset, reset to the starting state.",
-      "themes": [
-        "Miscellany"
-      ],
-      "status": "idea",
-      "notes": "",
-      "id": "4ee4c9c5-7623-488a-ba36-db0c0bb18a8f",
-      "createdAt": "2026-04-21"
-    }
-  ],
+  "ideas": [],
   "todos": {
     "parity-bits-game": [
       {
@@ -353,32 +342,42 @@
       {
         "id": "5ffacb36-9d7e-4e95-8632-deeb606c05a7",
         "text": "The start button labels should just read start",
-        "done": false,
-        "refId": "T2"
+        "done": true,
+        "refId": "T2",
+        "remark": "Removed mode-specific suffix; the Start button now reads just 'Start' regardless of mode.",
+        "doneDate": "2026-04-21"
       },
       {
         "id": "81dc226f-df36-4894-a037-78b298889255",
         "text": "In default mode, show the numbers also, but they should not be draggable until the user hits start",
-        "done": false,
-        "refId": "T3"
+        "done": true,
+        "refId": "T3",
+        "remark": "Available numbers now render pre-start too. draggable and onDragStart are both gated on isActive; disabled state shows opacity-60 + cursor-not-allowed.",
+        "doneDate": "2026-04-21"
       },
       {
         "id": "bd52f257-dae4-46cb-a28c-a1369c18f325",
         "text": "once the user hits start, don't hide the instructions (eg \"Drag numbers from below into the circle slots. Adjacent numbers that sum to a multiple of 3, 5, or 7 will show a red arc. Click a filled slot to remove the number.\") just disable the slider and toggle (but let all the UI elements be to avoid a jumping effect when start is clicked)",
-        "done": false,
-        "refId": "T4"
+        "done": true,
+        "refId": "T4",
+        "remark": "Lifted the config block out of the !isActive conditional; mode Switch and count Slider take disabled={isActive}. Instructions stay visible throughout the game, so starting no longer causes a layout jump.",
+        "doneDate": "2026-04-21"
       },
       {
         "id": "342fcbce-da98-4332-8210-b19e7514eca1",
         "text": "in guided mode, show the edges and the numbers, but nothing should be swappable until the user hits start.",
-        "done": false,
-        "refId": "T5"
+        "done": true,
+        "refId": "T5",
+        "remark": "Pre-start useEffect now primes a shuffled arrangement for guided mode (instead of only doing so in startGame), so edges and numbers render immediately. The arena wrapper stays pointer-events-none until start, and handleDrop/handleSlotClick short-circuit on !isActive.",
+        "doneDate": "2026-04-21"
       },
       {
         "id": "799be794-b904-4a08-9f04-46d1ae0329a9",
         "text": "guided mode help text, change \"Numbers are connected by edges if their sum is NOT divisible by 3, 5, or 7.\" to \"Numbers are connected by light grey edges if their sum is NOT divisible by 3, 5, or 7.\" add a line break and add \"Violations around the circle are marked by red arcs, and valid neighbors are connected by a green line.\"",
-        "done": false,
-        "refId": "T6"
+        "done": true,
+        "refId": "T6",
+        "remark": "Rewrote the guided-mode instructions as three paragraphs: light-grey edges rule, red arc / green line legend, and the click-to-swap instruction.",
+        "doneDate": "2026-04-21"
       }
     ]
   }

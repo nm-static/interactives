@@ -706,6 +706,24 @@ export const allInteractives: Interactive[] = [
     hasGreenScreen: false,
     status: "published" as const,
   },
+  {
+    slug: "computing-pi",
+    title: "Computing π from Coin Tosses",
+    description:
+      "Toss a coin until heads first outnumber tails, record the fraction, and repeat. The average of those fractions approaches π/4 — watch it converge in parallel runs.",
+    tags: [
+      "probability",
+      "simulation",
+      "pi",
+      "monte-carlo",
+      "random-walk",
+      "convergence",
+    ],
+    themes: ["Miscellany"],
+    dateAdded: "2026-04-21",
+    hasGreenScreen: false,
+    status: "published" as const,
+  },
 ];
 
 /** All published interactives. Use this for public-facing pages. */

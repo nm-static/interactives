@@ -43,4 +43,6 @@ export const componentMap: Record<string, LazyImport> = {
   "rent-division-puzzle": () => import("@/components/interactives/RentDivisionPuzzle"),
   "eternal-domination-game": () => import("@/components/interactives/EternalDominationGame"),
   "knights-and-knaves": () => import("@/components/interactives/KnightsAndKnavesI"),
+  "three-bank-accounts": () => import("@/components/interactives/ThreeBankAccounts"),
+  "computing-pi": () => import("@/components/interactives/ComputingPi"),
 };

@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, type ComponentType } from "react";
+import React, { type ComponentType,lazy, Suspense } from "react";
 
 const componentMap: Record<string, () => Promise<{ default: ComponentType<any> }>> = {
   "binary-number-game": () => import("./interactives/BinaryNumberGame"),
@@ -42,6 +42,7 @@ const componentMap: Record<string, () => Promise<{ default: ComponentType<any> }
   "eternal-domination-game": () => import("./interactives/EternalDominationGame"),
   "knights-and-knaves": () => import("./interactives/KnightsAndKnavesI"),
   "three-bank-accounts": () => import("./interactives/ThreeBankAccounts"),
+  "computing-pi": () => import("./interactives/ComputingPi"),
 };
 
 const lazyCache = new Map<string, React.LazyExoticComponent<ComponentType<any>>>();
