@@ -221,7 +221,7 @@ const ComputingPi: React.FC = () => {
           rel="noopener noreferrer"
           className="underline underline-offset-2 hover:text-foreground"
         >
-          this paper
+          this preprint
         </a>
         ). I found out about it from a{' '}
         <a
