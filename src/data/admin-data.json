@@ -444,6 +444,12 @@
         "refId": "T8",
         "remark": "Small text-xs text-muted-foreground note sits between the header Card block and the tile grid whenever runs exist. The old 'All runs complete' banner is now only shown when discarded runs need flagging, since the top note already covers the 'click to view' point.",
         "doneDate": "2026-04-21"
+      },
+      {
+        "id": "3bdae37e-7999-4243-b475-27d69880150a",
+        "text": "Make it so that if the user clicks on the average shown, they can toggle between seeing the average and the average multiplied by 4. When showing average, show the value of pi/4 below (instead of pi).",
+        "done": false,
+        "refId": "T9"
       }
     ]
   }
