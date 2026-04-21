@@ -379,6 +379,14 @@
         "remark": "Rewrote the guided-mode instructions as three paragraphs: light-grey edges rule, red arc / green line legend, and the click-to-swap instruction.",
         "doneDate": "2026-04-21"
       }
+    ],
+    "computing-pi": [
+      {
+        "id": "b7be0d32-057f-4902-8b0c-e9fcaa068d5d",
+        "text": "change threshold of safety cap to 5000",
+        "done": false,
+        "refId": "T1"
+      }
     ]
   }
 }
