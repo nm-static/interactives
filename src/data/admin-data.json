@@ -412,6 +412,12 @@
         "refId": "T4",
         "remark": "Added a bg-black/5 (dark: bg-white/5) header strip above the billboard showing 'H:{n}' left-aligned and 'T:{n}' right-aligned. Restructured RunTile so the wash class still applies to the whole tile but the header sits flush with the border.",
         "doneDate": "2026-04-21"
+      },
+      {
+        "id": "0e5f38ac-efb5-434a-a6fd-9eb7878da97e",
+        "text": "add a source: say \"This method is due to Jim Propp (see [this paper](https://arxiv.org/abs/2602.14487)). I found out about it from a [LinkedIn post](https://www.linkedin.com/feed/update/urn:li:activity:7429512673958043648/) by [Arghya Dutta](https://arghyadutta.github.io/).\" Add this as a footnote at the bottom of the page, centered (and render the markdown in this comment as proper HTML, of course).",
+        "done": false,
+        "refId": "T5"
       }
     ]
   }
