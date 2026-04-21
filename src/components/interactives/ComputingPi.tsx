@@ -287,10 +287,18 @@ const RunTile: React.FC<RunTileProps> = ({ index, run, clickable, onClick }) => 
         clickable ? 'cursor-pointer hover:border-primary' : 'cursor-default'
       }`}
     >
-      {/* H / T counters */}
-      <div className="flex justify-between items-center text-[10px] font-mono tabular-nums bg-black/5 dark:bg-white/5 px-2 py-0.5 text-muted-foreground">
+      {/* H / T counters with a fraction indicator dot — position = H/N,
+          midpoint = H=T, so the dot crosses the middle exactly when the run stops. */}
+      <div className="relative flex justify-between items-center text-[10px] font-mono tabular-nums bg-black/5 dark:bg-white/5 px-2 py-0.5 text-muted-foreground">
         <span>H:{run.heads}</span>
         <span>T:{run.tails}</span>
+        {run.sequence.length > 0 && (
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-foreground"
+            style={{ left: `${(run.heads / run.sequence.length) * 100}%` }}
+          />
+        )}
       </div>
 
       {/* Billboard + footer */}
