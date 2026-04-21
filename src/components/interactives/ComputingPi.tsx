@@ -76,6 +76,7 @@ const ComputingPi: React.FC = () => {
   const [runs, setRuns] = useState<Run[]>([]);
   const [running, setRunning] = useState(false);
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
+  const [showTimes4, setShowTimes4] = useState(true);
 
   const started = runs.length > 0;
   const allStopped = started && runs.every((r) => r.stopped);
@@ -144,17 +145,24 @@ const ComputingPi: React.FC = () => {
               />
             </div>
 
-            <div className="flex flex-col items-center">
+            <button
+              type="button"
+              onClick={() => setShowTimes4((v) => !v)}
+              aria-label="Toggle between average and average × 4"
+              className="flex flex-col items-center rounded-lg px-3 py-1 -my-1 hover:bg-background/60 transition-colors cursor-pointer"
+            >
               <span className="text-xs uppercase tracking-wide text-muted-foreground">
-                Average × 4
+                {showTimes4 ? 'Average × 4' : 'Average'}
               </span>
               <span className="font-mono text-3xl tabular-nums">
-                {avgTimes4 !== null ? avgTimes4.toFixed(4) : '—'}
+                {avgTimes4 !== null
+                  ? (showTimes4 ? avgTimes4 : avgTimes4 / 4).toFixed(4)
+                  : '—'}
               </span>
               <span className="text-xs text-muted-foreground">
-                π ≈ 3.1416
+                {showTimes4 ? 'π ≈ 3.1416' : 'π/4 ≈ 0.7854'}
               </span>
-            </div>
+            </button>
 
             <div className="flex justify-center sm:justify-end">
               {!started ? (
@@ -179,9 +187,10 @@ const ComputingPi: React.FC = () => {
           {/* Instruction + grid of runs */}
           {started ? (
             <>
-              <p className="text-xs text-center text-muted-foreground">
-                Click on any of the completed runs to view the full sequence.
-              </p>
+              <div className="text-xs text-center text-muted-foreground space-y-0.5">
+                <p>Click on any of the completed runs to view the full sequence.</p>
+                <p>Click on the average shown above to toggle between seeing the average and the average multiplied by 4.</p>
+              </div>
               <div
                 className="grid gap-2"
                 style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))' }}

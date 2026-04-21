@@ -450,6 +450,7 @@
         "text": "Make it so that if the user clicks on the average shown, they can toggle between seeing the average and the average multiplied by 4. When showing average, show the value of pi/4 below (instead of pi).",
         "done": true,
         "refId": "T9",
+        "remark": "Wrapped the center avg display in a <button> with a subtle hover wash. Added showTimes4 state (default true). Label flips Average × 4 ↔ Average, the big number divides by 4 when showing plain avg, and the reference line flips between 'π ≈ 3.1416' and 'π/4 ≈ 0.7854'.",
         "doneDate": "2026-04-21"
       },
       {
@@ -457,6 +458,7 @@
         "text": "Just below \"Click on any of the completed runs to view the full sequence.\", add the line \"Click on the average shown above to toggle between seeing the average and the average multiplied by 4).\"",
         "done": true,
         "refId": "T10",
+        "remark": "Stacked a second <p> under the existing instruction in a space-y-0.5 div so both lines share the centered text-muted-foreground styling.",
         "doneDate": "2026-04-21"
       }
     ]
