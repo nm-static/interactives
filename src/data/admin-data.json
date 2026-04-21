@@ -398,6 +398,12 @@
         "text": "when the safety cap is breached, discard those experiments from the average",
         "done": false,
         "refId": "T3"
+      },
+      {
+        "id": "cd4c937f-3f9d-4314-88fb-76ada39a3744",
+        "text": "above each of the tiny billboards, add a small grey row, on the left track the number of heads and on the right track the number of tails",
+        "done": false,
+        "refId": "T4"
       }
     ]
   }
