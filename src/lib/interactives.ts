@@ -710,7 +710,7 @@ export const allInteractives: Interactive[] = [
     slug: "computing-pi",
     title: "Computing π from Coin Tosses",
     description:
-      "Toss a coin until heads first outnumber tails, record the fraction, and repeat. The average of those fractions approaches π/4 — watch it converge in parallel runs.",
+      "Toss a coin until heads first outnumber tails, record the fraction, and repeat.",
     tags: [
       "probability",
       "simulation",
