@@ -53,6 +53,28 @@ The Netlify function persists state by committing to this same repo via the GitH
 
 Requires `GITHUB_TOKEN` env var on Netlify; without it, writes silently no-op.
 
+### Todo & idea workflow (Fizzy kanban mirror)
+
+The admin UI lets the author create **todos** (per-interactive, stored in `src/data/admin-data.json` under `todos[slug]`) and **ideas** (proposals for new interactives, under `ideas[]`). When an agent is asked to review or work on these, mirror the work to the author's Fizzy kanban board.
+
+**Board**
+- URL: `https://fizzy.neeldhara.cloud/7/boards/03fziwyb6y5amnepbensjq0sv/`
+- Account: `7`
+- Auth: Fizzy personal access token. **Do not commit it to this repo.** Read it from the `FIZZY_PAT` env var (or whatever secret store the author provides). If the token is unavailable, skip the mirror step and flag it to the user — never hardcode a fallback.
+
+**Card conventions**
+- One card per todo (title = the todo text) or per idea (title = idea title).
+- The interactive **slug** (e.g. `parity-bits-game`, `three-bank-accounts`) becomes a **tag** on the card, grouping cards by interactive. For ideas not yet tied to a slug, use the idea's working title as a tag.
+- **Column placement:**
+  - Todo the agent has made progress on → **Review** column.
+  - Idea the agent has implemented → **Review** column, with an implementation overview in the card body (what was built, files touched, trade-offs).
+  - Todos/ideas without progress → whatever the board's inbox/backlog column is. Confirm with the user if unclear.
+- **Card description must include a review link** — the GitHub URL for the staging branch (compare view vs. main) or, if a PR exists, the PR URL.
+
+**Commit flow**
+- Progress on todos/ideas goes to a **staging branch**, not directly to `main` and not to a per-session `claude/*` branch (unless the user explicitly says so).
+- Prefer a stable branch name (e.g. `staging`) so card links stay valid as more work lands, rather than a new branch per todo.
+
 ### Green screen mode
 
 Interactives marked `hasGreenScreen: true` can be wrapped in `GreenScreenWrapper` to render on a pure `#00ff00` background with forced black/white foreground colors (for chroma-keying into videos). The wrapper injects `!important` CSS overrides; be aware when debugging styling inside one.
