@@ -455,8 +455,9 @@
       {
         "id": "c614f5c8-dada-438d-96b2-87cf7ae59772",
         "text": "Just below \"Click on any of the completed runs to view the full sequence.\", add the line \"Click on the average shown above to toggle between seeing the average and the average multiplied by 4).\"",
-        "done": false,
-        "refId": "T10"
+        "done": true,
+        "refId": "T10",
+        "doneDate": "2026-04-21"
       }
     ]
   }
