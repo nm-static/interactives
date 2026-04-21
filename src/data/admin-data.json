@@ -424,6 +424,12 @@
         "text": "while simulations are running, just after \"Reset\", add (x/y) where x = number of completed simulations and y = n",
         "done": false,
         "refId": "T6"
+      },
+      {
+        "id": "b8bc7e4e-4ad6-428a-9620-7b3a7a354420",
+        "text": "for completed billboards, it should be possible for the user to click on them and view the full sequence in a modal, even while other sims are running",
+        "done": false,
+        "refId": "T7"
       }
     ]
   }
