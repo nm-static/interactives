@@ -43,6 +43,7 @@ const componentMap: Record<string, () => Promise<{ default: ComponentType<any> }
   "knights-and-knaves": () => import("./interactives/KnightsAndKnavesI"),
   "three-bank-accounts": () => import("./interactives/ThreeBankAccounts"),
   "computing-pi": () => import("./interactives/ComputingPi"),
+  "kasuti": () => import("./interactives/KasutiEmbroidery"),
 };
 
 const lazyCache = new Map<string, React.LazyExoticComponent<ComponentType<any>>>();

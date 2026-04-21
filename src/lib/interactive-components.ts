@@ -45,4 +45,5 @@ export const componentMap: Record<string, LazyImport> = {
   "knights-and-knaves": () => import("@/components/interactives/KnightsAndKnavesI"),
   "three-bank-accounts": () => import("@/components/interactives/ThreeBankAccounts"),
   "computing-pi": () => import("@/components/interactives/ComputingPi"),
+  "kasuti": () => import("@/components/interactives/KasutiEmbroidery"),
 };

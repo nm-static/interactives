@@ -286,6 +286,25 @@ export const allInteractives: Interactive[] = [
 
   // === Discrete Math - Graphs ===
   {
+    slug: "kasuti",
+    title: "Kasuti",
+    description:
+      "Trace traditional Kasuti embroidery motifs so the design appears identical on both sides — an alternating Eulerian tour puzzle on a grid.",
+    tags: [
+      "graph-theory",
+      "eulerian-tour",
+      "embroidery",
+      "kasuti",
+      "karnataka",
+      "tracing",
+    ],
+    themes: ["Discrete Math"],
+    subcategory: "graphs",
+    dateAdded: "2026-04-21",
+    hasGreenScreen: false,
+    status: "published" as const,
+  },
+  {
     slug: "neighbor-sum-avoidance",
     title: "Neighbor Sum Avoidance",
     description:
