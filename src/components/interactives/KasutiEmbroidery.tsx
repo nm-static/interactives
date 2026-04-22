@@ -743,6 +743,7 @@ const KasutiEmbroidery: React.FC = () => {
   const totalEdges = placed.edges.length;
   const frontRemaining = totalEdges - drawnFront.size;
   const backRemaining = totalEdges - drawnBack.size;
+  const deadEnd = !completed && currentVertex !== null && legalNextVertices.length === 0;
 
   return (
     <div className="w-full max-w-5xl mx-auto p-4 space-y-6">
@@ -868,6 +869,7 @@ const KasutiEmbroidery: React.FC = () => {
           legalNext={legalNextVertices}
           canStartAt={canStartAt}
           completed={completed}
+          deadEnd={deadEnd}
           remaining={frontRemaining}
         />
         <FabricPanel
@@ -889,6 +891,7 @@ const KasutiEmbroidery: React.FC = () => {
           legalNext={legalNextVertices}
           canStartAt={canStartAt}
           completed={completed}
+          deadEnd={deadEnd}
           remaining={backRemaining}
         />
       </div>
@@ -900,7 +903,7 @@ const KasutiEmbroidery: React.FC = () => {
         </div>
       )}
 
-      {!completed && currentVertex && legalNextVertices.length === 0 && (
+      {deadEnd && (
         <div className="text-center p-4 rounded-xl bg-amber-100 dark:bg-amber-900/30 border border-amber-500 text-amber-800 dark:text-amber-200 text-sm">
           No legal stitches from here on the {activeSide}. Undo a step or reset to try a
           different route.
@@ -931,6 +934,7 @@ interface FabricPanelProps {
   legalNext: V[];
   canStartAt: (v: V) => boolean;
   completed: boolean;
+  deadEnd: boolean;
   remaining: number;
 }
 
@@ -950,6 +954,7 @@ const FabricPanel: React.FC<FabricPanelProps> = ({
   legalNext,
   canStartAt,
   completed,
+  deadEnd,
   remaining,
 }) => {
   const isActive = activeSide === side && !completed;
@@ -1030,7 +1035,9 @@ const FabricPanel: React.FC<FabricPanelProps> = ({
           <svg
             width={SVG_DIM}
             height={SVG_DIM}
-            className="rounded-lg bg-card"
+            className={`rounded-lg transition-colors ${
+              deadEnd ? 'bg-muted' : 'bg-card'
+            }`}
             style={{
               outline: '1px solid var(--border)',
             }}
