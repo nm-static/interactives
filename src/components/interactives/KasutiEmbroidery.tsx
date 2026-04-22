@@ -1,5 +1,5 @@
 import confetti from 'canvas-confetti';
-import { Plus, RotateCcw, Undo2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, Plus, RotateCcw, Undo2, Upload } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
@@ -446,28 +446,152 @@ function toXY([r, c]: V): { x: number; y: number } {
 
 // ─── Mini pattern preview for the reel ──────────────────────────────────────
 
+const MINI_SIZE = 60;
+const MINI_PAD = 4;
+
 const MiniPreview: React.FC<{ pattern: Pattern; active: boolean }> = ({ pattern, active }) => {
   const [rows, cols] = pattern.bbox;
-  const pad = 4;
-  const cell = 14;
-  const w = cols * cell + pad * 2;
-  const h = rows * cell + pad * 2;
+  // Scale to fit the fixed MINI_SIZE square so big motifs (Snowflake, Rose) don't overshoot.
+  const span = Math.max(rows, cols, 1);
+  const inner = MINI_SIZE - MINI_PAD * 2;
+  const cell = inner / span;
+  const offsetR = (inner - rows * cell) / 2;
+  const offsetC = (inner - cols * cell) / 2;
   return (
-    <svg width={w} height={h} className="shrink-0">
+    <svg width={MINI_SIZE} height={MINI_SIZE} className="shrink-0">
       {pattern.edges.map(([a, b], i) => (
         <line
           key={i}
-          x1={pad + a[1] * cell}
-          y1={pad + a[0] * cell}
-          x2={pad + b[1] * cell}
-          y2={pad + b[0] * cell}
-          stroke={active ? 'currentColor' : 'currentColor'}
+          x1={MINI_PAD + offsetC + a[1] * cell}
+          y1={MINI_PAD + offsetR + a[0] * cell}
+          x2={MINI_PAD + offsetC + b[1] * cell}
+          y2={MINI_PAD + offsetR + b[0] * cell}
+          stroke="currentColor"
           strokeWidth={2}
           strokeLinecap="round"
           className={active ? 'text-primary' : 'text-muted-foreground'}
         />
       ))}
     </svg>
+  );
+};
+
+// ─── Motif reel (custom horizontal scroller) ────────────────────────────────
+
+interface MotifReelProps {
+  patterns: Pattern[];
+  activeId: string;
+  onSelect: (id: string) => void;
+  onOpenEditor: () => void;
+}
+
+const MotifReel: React.FC<MotifReelProps> = ({ patterns, activeId, onSelect, onOpenEditor }) => {
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const [atStart, setAtStart] = useState(true);
+  const [atEnd, setAtEnd] = useState(false);
+
+  const updateEdgeState = useCallback(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    setAtStart(el.scrollLeft <= 1);
+    setAtEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 1);
+  }, []);
+
+  useEffect(() => {
+    updateEdgeState();
+    const el = trackRef.current;
+    if (!el) return;
+    const handler = () => updateEdgeState();
+    el.addEventListener('scroll', handler, { passive: true });
+    const ro = new ResizeObserver(handler);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener('scroll', handler);
+      ro.disconnect();
+    };
+  }, [updateEdgeState, patterns.length]);
+
+  const scrollBy = useCallback((dir: 1 | -1) => {
+    const el = trackRef.current;
+    if (!el) return;
+    const step = Math.max(el.clientWidth * 0.8, 180);
+    el.scrollBy({ left: dir * step, behavior: 'smooth' });
+  }, []);
+
+  return (
+    <div className="relative">
+      <div
+        ref={trackRef}
+        className="flex gap-2 overflow-x-auto scrollbar-none pb-1"
+        style={{ scrollbarWidth: 'none' }}
+        role="radiogroup"
+        aria-label="Motif picker"
+      >
+        {patterns.map((p) => {
+          const active = p.id === activeId;
+          return (
+            <button
+              key={p.id}
+              role="radio"
+              aria-checked={active}
+              onClick={() => onSelect(p.id)}
+              className={`shrink-0 flex flex-col items-center gap-1 rounded-lg border p-2 transition-colors min-w-[92px] ${
+                active
+                  ? 'border-primary bg-primary/5 text-foreground'
+                  : 'border-border bg-card hover:border-primary/40'
+              }`}
+            >
+              <div className="h-[60px] w-[60px] flex items-center justify-center">
+                <MiniPreview pattern={p} active={active} />
+              </div>
+              <span className="text-xs font-medium">{p.title}</span>
+              <span className="text-[10px] text-muted-foreground">{p.description}</span>
+            </button>
+          );
+        })}
+
+        <button
+          type="button"
+          onClick={onOpenEditor}
+          aria-label="Design your own motif"
+          className="shrink-0 flex flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-border p-2 transition-colors min-w-[92px] hover:border-primary/60 hover:bg-primary/5"
+        >
+          <div className="h-[60px] w-[60px] flex items-center justify-center">
+            <div className="w-9 h-9 rounded-full border-2 border-primary/60 flex items-center justify-center">
+              <Plus className="w-5 h-5 text-primary" />
+            </div>
+          </div>
+          <span className="text-xs font-medium">Make your own</span>
+          <span className="text-[10px] text-muted-foreground">draw a motif</span>
+        </button>
+      </div>
+
+      {/* Edge fades + arrow buttons */}
+      {!atStart && (
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-card to-transparent" />
+      )}
+      {!atEnd && (
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-card to-transparent" />
+      )}
+      <button
+        type="button"
+        onClick={() => scrollBy(-1)}
+        disabled={atStart}
+        aria-label="Scroll motifs left"
+        className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-8 h-8 rounded-full bg-card border border-border shadow-sm flex items-center justify-center transition-opacity disabled:opacity-0 disabled:pointer-events-none hover:border-primary/60"
+      >
+        <ChevronLeft className="w-4 h-4" />
+      </button>
+      <button
+        type="button"
+        onClick={() => scrollBy(1)}
+        disabled={atEnd}
+        aria-label="Scroll motifs right"
+        className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1 w-8 h-8 rounded-full bg-card border border-border shadow-sm flex items-center justify-center transition-opacity disabled:opacity-0 disabled:pointer-events-none hover:border-primary/60"
+      >
+        <ChevronRight className="w-4 h-4" />
+      </button>
+    </div>
   );
 };
 
@@ -652,49 +776,12 @@ const KasutiEmbroidery: React.FC = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <div
-            className="flex gap-2 overflow-x-auto pb-2"
-            role="radiogroup"
-            aria-label="Motif picker"
-          >
-            {visiblePatterns.map((p) => {
-              const active = p.id === patternId;
-              return (
-                <button
-                  key={p.id}
-                  role="radio"
-                  aria-checked={active}
-                  onClick={() => selectPattern(p.id)}
-                  className={`shrink-0 flex flex-col items-center gap-1 rounded-lg border p-2 transition-colors min-w-[88px] ${
-                    active
-                      ? 'border-primary bg-primary/5 text-foreground'
-                      : 'border-border bg-card hover:border-primary/40'
-                  }`}
-                >
-                  <div className="h-[60px] flex items-center justify-center">
-                    <MiniPreview pattern={p} active={active} />
-                  </div>
-                  <span className="text-xs font-medium">{p.title}</span>
-                  <span className="text-[10px] text-muted-foreground">{p.description}</span>
-                </button>
-              );
-            })}
-
-            <button
-              type="button"
-              onClick={() => setEditorOpen(true)}
-              aria-label="Design your own motif"
-              className="shrink-0 flex flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-border p-2 transition-colors min-w-[88px] hover:border-primary/60 hover:bg-primary/5"
-            >
-              <div className="h-[60px] flex items-center justify-center">
-                <div className="w-9 h-9 rounded-full border-2 border-primary/60 flex items-center justify-center">
-                  <Plus className="w-5 h-5 text-primary" />
-                </div>
-              </div>
-              <span className="text-xs font-medium">Make your own</span>
-              <span className="text-[10px] text-muted-foreground">draw a motif</span>
-            </button>
-          </div>
+          <MotifReel
+            patterns={visiblePatterns}
+            activeId={patternId}
+            onSelect={selectPattern}
+            onOpenEditor={() => setEditorOpen(true)}
+          />
         </CardContent>
       </Card>
 
@@ -896,7 +983,7 @@ const FabricPanel: React.FC<FabricPanelProps> = ({
           </div>
           <div className="flex items-center gap-2">
             <Label className="text-xs text-muted-foreground shrink-0">thread</Label>
-            <div className="flex gap-1">
+            <div className="flex items-center gap-1">
               {palette.map((c) => (
                 <button
                   key={c}
@@ -909,6 +996,23 @@ const FabricPanel: React.FC<FabricPanelProps> = ({
                   style={{ backgroundColor: c }}
                 />
               ))}
+              <label
+                aria-label={`Pick a custom ${side} thread color`}
+                className={`relative w-5 h-5 rounded-full border-2 transition-transform cursor-pointer overflow-hidden ${
+                  palette.includes(color) ? 'border-border' : 'border-foreground scale-110'
+                }`}
+                style={{
+                  background:
+                    'conic-gradient(from 0deg, #ef4444, #f59e0b, #facc15, #22c55e, #06b6d4, #3b82f6, #a855f7, #ec4899, #ef4444)',
+                }}
+              >
+                <input
+                  type="color"
+                  value={color}
+                  onChange={(e) => setColor(e.target.value)}
+                  className="absolute inset-0 opacity-0 cursor-pointer"
+                />
+              </label>
             </div>
           </div>
         </div>
@@ -979,7 +1083,7 @@ const FabricPanel: React.FC<FabricPanelProps> = ({
               );
             })}
 
-            {/* Legal-next affordances */}
+            {/* Legal-next affordances (green = go) */}
             {isActive &&
               currentVertex &&
               legalNext.map((v, i) => {
@@ -990,7 +1094,7 @@ const FabricPanel: React.FC<FabricPanelProps> = ({
                     cx={x}
                     cy={y}
                     r={6}
-                    className="fill-primary/30 stroke-primary"
+                    className="fill-green-500/30 stroke-green-600 dark:fill-green-400/25 dark:stroke-green-400"
                     strokeWidth={1.5}
                   />
                 );
@@ -1007,7 +1111,7 @@ const FabricPanel: React.FC<FabricPanelProps> = ({
                     cx={x}
                     cy={y}
                     r={5}
-                    className="fill-primary/20 stroke-primary/70"
+                    className="fill-green-500/20 stroke-green-600/70 dark:fill-green-400/15 dark:stroke-green-400/70"
                     strokeWidth={1}
                   />
                 );
@@ -1025,13 +1129,17 @@ const FabricPanel: React.FC<FabricPanelProps> = ({
               />
             )}
 
-            {/* Current vertex marker */}
+            {/* Current vertex marker — full colour on the active side, grey on the other */}
             {currentVertex && (
               <circle
                 cx={toXY(currentVertex).x}
                 cy={toXY(currentVertex).y}
                 r={4}
-                className="fill-primary"
+                className={
+                  isActive
+                    ? 'fill-green-600 dark:fill-green-400'
+                    : 'fill-muted-foreground/60'
+                }
               />
             )}
 
@@ -1108,17 +1216,6 @@ function isConnected(edges: Array<readonly [V, V]>): boolean {
   return seen.size === adj.size;
 }
 
-function oddDegreeVertices(edges: Array<readonly [V, V]>): number {
-  const deg = new Map<string, number>();
-  for (const [a, b] of edges) {
-    deg.set(vKey(a), (deg.get(vKey(a)) ?? 0) + 1);
-    deg.set(vKey(b), (deg.get(vKey(b)) ?? 0) + 1);
-  }
-  let odd = 0;
-  for (const d of deg.values()) if (d % 2 !== 0) odd++;
-  return odd;
-}
-
 function normalizePattern(edges: Array<readonly [V, V]>): Pattern | null {
   if (edges.length === 0) return null;
   let minR = Infinity,
@@ -1153,27 +1250,74 @@ interface PatternEditorProps {
   onSave: (p: Pattern) => void;
 }
 
+interface KasutiPatternFile {
+  kind: 'kasuti-pattern';
+  version: 1;
+  title: string;
+  edges: Array<[[number, number], [number, number]]>;
+}
+
+function centeredEdgeSetFromPattern(p: Pattern): Set<EdgeKey> {
+  const [br, bc] = p.bbox;
+  const offR = Math.max(0, Math.floor((EDITOR_SIZE - br) / 2));
+  const offC = Math.max(0, Math.floor((EDITOR_SIZE - bc) / 2));
+  const out = new Set<EdgeKey>();
+  for (const [a, b] of p.edges) {
+    const sa: V = [a[0] + offR, a[1] + offC];
+    const sb: V = [b[0] + offR, b[1] + offC];
+    out.add(edgeKey(sa, sb));
+  }
+  return out;
+}
+
+function parsePatternFile(raw: string): Pattern | null {
+  try {
+    const data = JSON.parse(raw) as KasutiPatternFile;
+    if (!data || data.kind !== 'kasuti-pattern' || !Array.isArray(data.edges)) return null;
+    const edges: Array<readonly [V, V]> = [];
+    for (const e of data.edges) {
+      if (!Array.isArray(e) || e.length !== 2) return null;
+      const [a, b] = e;
+      if (!Array.isArray(a) || !Array.isArray(b)) return null;
+      if (a.length !== 2 || b.length !== 2) return null;
+      const [r1, c1] = a;
+      const [r2, c2] = b;
+      if (
+        typeof r1 !== 'number' ||
+        typeof c1 !== 'number' ||
+        typeof r2 !== 'number' ||
+        typeof c2 !== 'number'
+      )
+        return null;
+      // Only orthogonal unit-length segments are valid.
+      const dr = Math.abs(r1 - r2);
+      const dc = Math.abs(c1 - c2);
+      if (!((dr === 1 && dc === 0) || (dr === 0 && dc === 1))) return null;
+      edges.push([[r1, c1] as V, [r2, c2] as V]);
+    }
+    const normalized = normalizePattern(edges);
+    if (!normalized) return null;
+    return { ...normalized, title: data.title || 'Custom' };
+  } catch {
+    return null;
+  }
+}
+
 const PatternEditor: React.FC<PatternEditorProps> = ({ open, onOpenChange, initial, onSave }) => {
   const [edges, setEdges] = useState<Set<EdgeKey>>(new Set());
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // When the modal opens, seed from the initial custom pattern (if any), centred in the
   // editor grid. Resetting here avoids stale state between open/close cycles.
   useEffect(() => {
     if (!open) return;
+    setLoadError(null);
     if (!initial) {
       setEdges(new Set());
       return;
     }
-    const [br, bc] = initial.bbox;
-    const offR = Math.max(0, Math.floor((EDITOR_SIZE - br) / 2));
-    const offC = Math.max(0, Math.floor((EDITOR_SIZE - bc) / 2));
-    const seed = new Set<EdgeKey>();
-    for (const [a, b] of initial.edges) {
-      const sa: V = [a[0] + offR, a[1] + offC];
-      const sb: V = [b[0] + offR, b[1] + offC];
-      seed.add(edgeKey(sa, sb));
-    }
-    setEdges(seed);
+    setEdges(centeredEdgeSetFromPattern(initial));
   }, [open, initial]);
 
   const toggleEdge = useCallback((a: V, b: V) => {
@@ -1188,7 +1332,6 @@ const PatternEditor: React.FC<PatternEditorProps> = ({ open, onOpenChange, initi
 
   const edgeList = useMemo(() => edgeListFromKeys(edges), [edges]);
   const connected = useMemo(() => isConnected(edgeList), [edgeList]);
-  const oddCount = useMemo(() => oddDegreeVertices(edgeList), [edgeList]);
   const count = edges.size;
 
   const allEdges: Array<[V, V]> = useMemo(() => {
@@ -1218,15 +1361,67 @@ const PatternEditor: React.FC<PatternEditorProps> = ({ open, onOpenChange, initi
 
   const handleClear = useCallback(() => setEdges(new Set()), []);
 
+  const handleDownload = useCallback(() => {
+    const pattern = normalizePattern(edgeList);
+    if (!pattern) return;
+    const payload: KasutiPatternFile = {
+      kind: 'kasuti-pattern',
+      version: 1,
+      title: 'Custom',
+      edges: pattern.edges.map(([a, b]) => [
+        [a[0], a[1]],
+        [b[0], b[1]],
+      ]),
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `kasuti-motif-${pattern.edges.length}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }, [edgeList]);
+
+  const handleUpload = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleFilePicked = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === 'string' ? reader.result : '';
+      const parsed = parsePatternFile(result);
+      if (!parsed) {
+        setLoadError('That file does not look like a saved Kasuti motif.');
+        return;
+      }
+      const [br, bc] = parsed.bbox;
+      if (br > EDITOR_SIZE || bc > EDITOR_SIZE) {
+        setLoadError(
+          `That motif is too big for the editor grid (${br + 1}×${bc + 1} > ${EDITOR_SIZE + 1}×${EDITOR_SIZE + 1}).`
+        );
+        return;
+      }
+      setLoadError(null);
+      setEdges(centeredEdgeSetFromPattern(parsed));
+    };
+    reader.onerror = () => setLoadError('Could not read that file.');
+    reader.readAsText(file);
+  }, []);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg md:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Design your own motif</DialogTitle>
           <DialogDescription>
-            Click between two dots to add or remove a stitch line. The motif must be{' '}
-            <em>connected</em> for the puzzle to start. For a complete alternating tour, every
-            vertex should have an even number of incident lines.
+            Click between two dots to add or remove a stitch line. As long as your motif is{' '}
+            <em>connected</em>, an alternating kasuti tour exists on it.
           </DialogDescription>
         </DialogHeader>
 
@@ -1303,22 +1498,39 @@ const PatternEditor: React.FC<PatternEditorProps> = ({ open, onOpenChange, initi
               Not connected — every drawn segment must reach every other segment.
             </p>
           )}
-          {count > 0 && connected && oddCount === 0 && (
-            <p className="text-success">
-              Connected and every vertex has even degree — a complete alternating tour exists.
-            </p>
+          {count > 0 && connected && (
+            <p className="text-success">Connected — ready to stitch.</p>
           )}
-          {count > 0 && connected && oddCount > 0 && (
-            <p className="text-amber-600 dark:text-amber-400">
-              Connected, but {oddCount} vertex{oddCount === 1 ? '' : 'es'} {oddCount === 1 ? 'has' : 'have'} odd degree — you may not be able to close the tour.
-            </p>
-          )}
+          {loadError && <p className="text-destructive">{loadError}</p>}
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-2">
-          <Button variant="outline" onClick={handleClear} disabled={count === 0}>
-            Clear
-          </Button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/json,.json"
+          className="hidden"
+          onChange={handleFilePicked}
+        />
+
+        <DialogFooter className="flex-col-reverse sm:flex-row gap-2 sm:justify-between">
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleUpload}>
+              <Upload className="w-4 h-4 mr-1" />
+              Upload
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDownload}
+              disabled={count === 0}
+            >
+              <Download className="w-4 h-4 mr-1" />
+              Download
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleClear} disabled={count === 0}>
+              Clear
+            </Button>
+          </div>
           <Button onClick={handleSave} disabled={!connected}>
             Use this motif
           </Button>
