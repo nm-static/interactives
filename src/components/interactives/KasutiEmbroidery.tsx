@@ -1,6 +1,7 @@
 import confetti from 'canvas-confetti';
-import { ChevronLeft, ChevronRight, Download, Pause, Play, Plus, RotateCcw, SkipBack, SkipForward, Undo2, Upload } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, Link as LinkIcon, Pause, Play, Plus, RotateCcw, Share2, SkipBack, SkipForward, Undo2, Upload } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Toaster as SonnerToaster } from '@/components/ui/sonner';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -72,6 +74,78 @@ function isNeighbor(a: V, b: V): boolean {
 function vEqual(a: V | null, b: V | null): boolean {
   if (!a || !b) return false;
   return a[0] === b[0] && a[1] === b[1];
+}
+
+// ─── Replay URL codec ───────────────────────────────────────────────────────
+// The payload captures just enough to reconstruct a completed tour: which
+// pattern (preset id, or "custom" with its edge list), the start vertex, and
+// the sequence of to-points. Sides alternate front/back so they don't need
+// encoding. Coordinates are placed coords on the 20×20 grid; placement is
+// deterministic (bbox centering) so a snowflake reload lands on the same
+// vertices that were recorded.
+
+interface ReplayPayload {
+  v: 1;
+  p: string;
+  e?: Array<[[number, number], [number, number]]>;
+  s: [number, number];
+  t: Array<[number, number]>;
+}
+
+function b64urlEncode(s: string): string {
+  return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+function b64urlDecode(s: string): string {
+  const padded = s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice(0, (4 - (s.length % 4)) % 4);
+  return atob(padded);
+}
+
+function encodeReplay(
+  patternId: string,
+  customPattern: Pattern | null,
+  startVertex: V,
+  stitches: Stitch[]
+): string {
+  const payload: ReplayPayload = {
+    v: 1,
+    p: patternId,
+    s: [startVertex[0], startVertex[1]],
+    t: stitches.map((st) => [st.to[0], st.to[1]]),
+  };
+  if (patternId === 'custom' && customPattern) {
+    payload.e = customPattern.edges.map(([a, b]) => [
+      [a[0], a[1]],
+      [b[0], b[1]],
+    ]);
+  }
+  return b64urlEncode(JSON.stringify(payload));
+}
+
+function decodeReplay(raw: string): ReplayPayload | null {
+  try {
+    const obj = JSON.parse(b64urlDecode(raw)) as ReplayPayload;
+    if (!obj || obj.v !== 1) return null;
+    if (typeof obj.p !== 'string') return null;
+    if (!Array.isArray(obj.s) || obj.s.length !== 2) return null;
+    if (!Array.isArray(obj.t)) return null;
+    for (const pt of obj.t) {
+      if (!Array.isArray(pt) || pt.length !== 2) return null;
+      if (typeof pt[0] !== 'number' || typeof pt[1] !== 'number') return null;
+    }
+    if (obj.e !== undefined) {
+      if (!Array.isArray(obj.e)) return null;
+      for (const e of obj.e) {
+        if (!Array.isArray(e) || e.length !== 2) return null;
+        const [a, b] = e;
+        if (!Array.isArray(a) || !Array.isArray(b)) return null;
+        if (a.length !== 2 || b.length !== 2) return null;
+      }
+    }
+    return obj;
+  } catch {
+    return null;
+  }
 }
 
 // ─── Patterns ───────────────────────────────────────────────────────────────
@@ -736,6 +810,37 @@ const KasutiEmbroidery: React.FC = () => {
     celebratedRef.current = false;
   }, [stitches]);
 
+  // Build a shareable URL that hydrates to this tour on arrival.
+  const buildReplayUrl = useCallback((): string | null => {
+    if (!completed || !startVertex || typeof window === 'undefined') return null;
+    const encoded = encodeReplay(patternId, customPattern, startVertex, stitches);
+    const url = new URL(window.location.href);
+    url.search = '';
+    url.searchParams.set('replay', encoded);
+    return url.toString();
+  }, [completed, startVertex, patternId, customPattern, stitches]);
+
+  const copyReplayLink = useCallback(async () => {
+    const url = buildReplayUrl();
+    if (!url) return;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success('Replay link copied to clipboard.');
+    } catch {
+      toast.error('Could not copy — your browser blocked clipboard access.');
+    }
+  }, [buildReplayUrl]);
+
+  const shareReplayOnX = useCallback(() => {
+    const url = buildReplayUrl();
+    if (!url) return;
+    const patternName =
+      visiblePatterns.find((p) => p.id === patternId)?.title ?? 'kasuti';
+    const text = `I just traced a ${patternName} kasuti tour in ${stitches.length} stitches — watch it replay:`;
+    const tweet = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+    window.open(tweet, '_blank', 'noopener,noreferrer');
+  }, [buildReplayUrl, patternId, stitches.length, visiblePatterns]);
+
   // On first completion: confetti + kick off an autoplay replay from step 0.
   // When the tour is un-completed (undo/reset/pattern change), tear down replay.
   useEffect(() => {
@@ -749,6 +854,66 @@ const KasutiEmbroidery: React.FC = () => {
       setReplayPlaying(false);
     }
   }, [completed]);
+
+  // Hydrate from ?replay=... on mount. Runs once client-side; if the payload
+  // parses and the pattern is known (preset or carried inline), rebuild the
+  // stitch sequence and mark the tour complete — the completion effect above
+  // then takes care of confetti + autoplay.
+  const hydratedRef = useRef(false);
+  useEffect(() => {
+    if (hydratedRef.current) return;
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const raw = params.get('replay');
+    if (!raw) return;
+    const payload = decodeReplay(raw);
+    if (!payload) return;
+
+    let targetPattern: Pattern | null = null;
+    if (payload.p === 'custom' && payload.e) {
+      const customEdges: Array<readonly [V, V]> = payload.e.map(([a, b]) => [
+        [a[0], a[1]] as V,
+        [b[0], b[1]] as V,
+      ]);
+      // Build a Pattern from the raw (already-placed) edges. bbox should be 0..max.
+      let maxR = 0;
+      let maxC = 0;
+      for (const [a, b] of customEdges) {
+        maxR = Math.max(maxR, a[0], b[0]);
+        maxC = Math.max(maxC, a[1], b[1]);
+      }
+      targetPattern = {
+        id: 'custom',
+        title: 'Custom',
+        description: `${customEdges.length} stitches`,
+        bbox: [maxR, maxC],
+        edges: customEdges,
+      };
+      setCustomPattern(targetPattern);
+    } else {
+      targetPattern = PATTERNS.find((p) => p.id === payload.p) ?? null;
+    }
+    if (!targetPattern) return;
+
+    setPatternId(payload.p);
+
+    // Reconstruct stitches: start at payload.s, alternate sides, each entry's
+    // `to` is the corresponding tour point.
+    const start: V = [payload.s[0], payload.s[1]];
+    const rebuilt: Stitch[] = [];
+    let from: V = start;
+    payload.t.forEach((pt, i) => {
+      const to: V = [pt[0], pt[1]];
+      rebuilt.push({ side: i % 2 === 0 ? 'front' : 'back', from, to });
+      from = to;
+    });
+    setStartVertex(start);
+    setCurrentVertex(from);
+    setActiveSide(rebuilt.length % 2 === 0 ? 'front' : 'back');
+    setStitches(rebuilt);
+    setCompleted(true);
+    hydratedRef.current = true;
+  }, []);
 
   // Replay autoplay tick.
   useEffect(() => {
@@ -968,6 +1133,8 @@ const KasutiEmbroidery: React.FC = () => {
           onIdxChange={setReplayIdx}
           onPlayingChange={setReplayPlaying}
           onSpeedChange={setReplaySpeed}
+          onCopyLink={copyReplayLink}
+          onShareTweet={shareReplayOnX}
         />
       )}
 
@@ -1027,6 +1194,7 @@ const KasutiEmbroidery: React.FC = () => {
         </a>
         !
       </footer>
+      <SonnerToaster richColors position="bottom-center" />
     </div>
   );
 };
@@ -1041,6 +1209,8 @@ interface ReplayControlsProps {
   onIdxChange: (idx: number) => void;
   onPlayingChange: (playing: boolean) => void;
   onSpeedChange: (speed: number) => void;
+  onCopyLink: () => void;
+  onShareTweet: () => void;
 }
 
 const REPLAY_SPEEDS = [0.5, 1, 2] as const;
@@ -1053,6 +1223,8 @@ const ReplayControls: React.FC<ReplayControlsProps> = ({
   onIdxChange,
   onPlayingChange,
   onSpeedChange,
+  onCopyLink,
+  onShareTweet,
 }) => {
   const atStart = replayIdx <= 0;
   const atEnd = replayIdx >= totalStitches;
@@ -1073,22 +1245,32 @@ const ReplayControls: React.FC<ReplayControlsProps> = ({
         <p className="text-sm font-semibold text-green-800 dark:text-green-200">
           Tour complete in {totalStitches} stitches — replay below.
         </p>
-        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-          speed
-          {REPLAY_SPEEDS.map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => onSpeedChange(s)}
-              className={`px-2 py-0.5 rounded-md font-mono ${
-                s === speed
-                  ? 'bg-foreground text-background'
-                  : 'hover:bg-muted'
-              }`}
-            >
-              {s === 1 ? '1×' : `${s}×`}
-            </button>
-          ))}
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button variant="outline" size="sm" onClick={onCopyLink}>
+            <LinkIcon className="w-4 h-4 mr-1" />
+            Copy link
+          </Button>
+          <Button variant="outline" size="sm" onClick={onShareTweet}>
+            <Share2 className="w-4 h-4 mr-1" />
+            Share
+          </Button>
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            speed
+            {REPLAY_SPEEDS.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => onSpeedChange(s)}
+                className={`px-2 py-0.5 rounded-md font-mono ${
+                  s === speed
+                    ? 'bg-foreground text-background'
+                    : 'hover:bg-muted'
+                }`}
+              >
+                {s === 1 ? '1×' : `${s}×`}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
