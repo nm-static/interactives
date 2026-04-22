@@ -1,10 +1,18 @@
 import confetti from 'canvas-confetti';
-import { RotateCcw, Undo2 } from 'lucide-react';
+import { Plus, RotateCcw, Undo2 } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -178,6 +186,215 @@ const PATTERNS: Pattern[] = [
       [[1, 1], [0, 1]],
     ],
   },
+  // Rose — central square with four corner-shared petal squares (pattern 1 from the
+  // reference sheet). Each corner of the central square carries a 2×2 petal.
+  {
+    id: 'rose',
+    title: 'Rose',
+    description: '36 stitches',
+    bbox: [7, 7],
+    edges: [
+      // Central 1×1 square at (3,3)..(4,4)
+      [[3, 3], [3, 4]],
+      [[3, 4], [4, 4]],
+      [[4, 4], [4, 3]],
+      [[4, 3], [3, 3]],
+      // NW petal: 2×2 square with corner (3,3)
+      [[1, 1], [1, 2]],
+      [[1, 2], [1, 3]],
+      [[1, 3], [2, 3]],
+      [[2, 3], [3, 3]],
+      [[3, 3], [3, 2]],
+      [[3, 2], [3, 1]],
+      [[3, 1], [2, 1]],
+      [[2, 1], [1, 1]],
+      // NE petal: corner (3,4)
+      [[1, 4], [1, 5]],
+      [[1, 5], [1, 6]],
+      [[1, 6], [2, 6]],
+      [[2, 6], [3, 6]],
+      [[3, 6], [3, 5]],
+      [[3, 5], [3, 4]],
+      [[3, 4], [2, 4]],
+      [[2, 4], [1, 4]],
+      // SW petal: corner (4,3)
+      [[4, 1], [4, 2]],
+      [[4, 2], [4, 3]],
+      [[4, 3], [5, 3]],
+      [[5, 3], [6, 3]],
+      [[6, 3], [6, 2]],
+      [[6, 2], [6, 1]],
+      [[6, 1], [5, 1]],
+      [[5, 1], [4, 1]],
+      // SE petal: corner (4,4)
+      [[4, 4], [4, 5]],
+      [[4, 5], [4, 6]],
+      [[4, 6], [5, 6]],
+      [[5, 6], [6, 6]],
+      [[6, 6], [6, 5]],
+      [[6, 5], [6, 4]],
+      [[6, 4], [5, 4]],
+      [[5, 4], [4, 4]],
+    ],
+  },
+  // Totem — top two boxes, middle square, wide base (pattern 2 from the reference).
+  {
+    id: 'totem',
+    title: 'Totem',
+    description: '24 stitches',
+    bbox: [3, 5],
+    edges: [
+      // Top-left box (0..1, 1..2)
+      [[0, 1], [0, 2]],
+      [[0, 2], [1, 2]],
+      [[1, 2], [1, 1]],
+      [[1, 1], [0, 1]],
+      // Top-right box (0..1, 3..4)
+      [[0, 3], [0, 4]],
+      [[0, 4], [1, 4]],
+      [[1, 4], [1, 3]],
+      [[1, 3], [0, 3]],
+      // Middle square (1..2, 2..3) — shares corners (1,2) and (1,3)
+      [[1, 2], [1, 3]],
+      [[1, 3], [2, 3]],
+      [[2, 3], [2, 2]],
+      [[2, 2], [1, 2]],
+      // Base (2..3, 0..5) — passes through (2,2),(2,3) so their degree stays even
+      [[2, 0], [2, 1]],
+      [[2, 1], [2, 2]],
+      [[2, 2], [2, 3]],
+      [[2, 3], [2, 4]],
+      [[2, 4], [2, 5]],
+      [[2, 5], [3, 5]],
+      [[3, 5], [3, 4]],
+      [[3, 4], [3, 3]],
+      [[3, 3], [3, 2]],
+      [[3, 2], [3, 1]],
+      [[3, 1], [3, 0]],
+      [[3, 0], [2, 0]],
+    ],
+  },
+  // Figurine — head / arms / body / legs (pattern 4 from the reference).
+  {
+    id: 'figurine',
+    title: 'Figurine',
+    description: '34 stitches',
+    bbox: [5, 6],
+    edges: [
+      // Head (0..1, 3..4)
+      [[0, 3], [0, 4]],
+      [[0, 4], [1, 4]],
+      [[1, 4], [1, 3]],
+      [[1, 3], [0, 3]],
+      // Left arm: 2×2 rect (1..2, 1..3), corner-shared at (1,3)
+      [[1, 1], [1, 2]],
+      [[1, 2], [1, 3]],
+      [[1, 3], [2, 3]],
+      [[2, 3], [2, 2]],
+      [[2, 2], [2, 1]],
+      [[2, 1], [1, 1]],
+      // Right arm: 2×2 rect (1..2, 4..6), corner-shared at (1,4)
+      [[1, 4], [1, 5]],
+      [[1, 5], [1, 6]],
+      [[1, 6], [2, 6]],
+      [[2, 6], [2, 5]],
+      [[2, 5], [2, 4]],
+      [[2, 4], [1, 4]],
+      // Body: 1×2 rect (2..4, 3..4) — corner-shared with left arm at (2,3)
+      //       and with right arm at (2,4)
+      [[2, 3], [2, 4]],
+      [[2, 4], [3, 4]],
+      [[3, 4], [4, 4]],
+      [[4, 4], [4, 3]],
+      [[4, 3], [3, 3]],
+      [[3, 3], [2, 3]],
+      // Left leg: 2×2 rect (4..5, 1..3), corner-shared with body at (4,3)
+      [[4, 1], [4, 2]],
+      [[4, 2], [4, 3]],
+      [[4, 3], [5, 3]],
+      [[5, 3], [5, 2]],
+      [[5, 2], [5, 1]],
+      [[5, 1], [4, 1]],
+      // Right leg: corner-shared with body at (4,4)
+      [[4, 4], [4, 5]],
+      [[4, 5], [4, 6]],
+      [[4, 6], [5, 6]],
+      [[5, 6], [5, 5]],
+      [[5, 5], [5, 4]],
+      [[5, 4], [4, 4]],
+    ],
+  },
+  // Snowflake — central square, four inner petals, four outer 2×2 petals. 4-fold
+  // symmetric, richer motif inspired by the red kasuti sample.
+  {
+    id: 'snowflake',
+    title: 'Snowflake',
+    description: '52 stitches',
+    bbox: [7, 7],
+    edges: [
+      // Central 1×1 square at (3,3)..(4,4)
+      [[3, 3], [3, 4]],
+      [[3, 4], [4, 4]],
+      [[4, 4], [4, 3]],
+      [[4, 3], [3, 3]],
+      // Inner NW petal (2,2)..(3,3)
+      [[2, 2], [2, 3]],
+      [[2, 3], [3, 3]],
+      [[3, 3], [3, 2]],
+      [[3, 2], [2, 2]],
+      // Inner NE petal (2,4)..(3,5)
+      [[2, 4], [2, 5]],
+      [[2, 5], [3, 5]],
+      [[3, 5], [3, 4]],
+      [[3, 4], [2, 4]],
+      // Inner SW petal (4,2)..(5,3)
+      [[4, 2], [4, 3]],
+      [[4, 3], [5, 3]],
+      [[5, 3], [5, 2]],
+      [[5, 2], [4, 2]],
+      // Inner SE petal (4,4)..(5,5)
+      [[4, 4], [4, 5]],
+      [[4, 5], [5, 5]],
+      [[5, 5], [5, 4]],
+      [[5, 4], [4, 4]],
+      // Outer NW 2×2 square sharing (2,2)
+      [[0, 0], [0, 1]],
+      [[0, 1], [0, 2]],
+      [[0, 2], [1, 2]],
+      [[1, 2], [2, 2]],
+      [[2, 2], [2, 1]],
+      [[2, 1], [2, 0]],
+      [[2, 0], [1, 0]],
+      [[1, 0], [0, 0]],
+      // Outer NE 2×2 sharing (2,5)
+      [[0, 5], [0, 6]],
+      [[0, 6], [0, 7]],
+      [[0, 7], [1, 7]],
+      [[1, 7], [2, 7]],
+      [[2, 7], [2, 6]],
+      [[2, 6], [2, 5]],
+      [[2, 5], [1, 5]],
+      [[1, 5], [0, 5]],
+      // Outer SW 2×2 sharing (5,2)
+      [[5, 0], [5, 1]],
+      [[5, 1], [5, 2]],
+      [[5, 2], [6, 2]],
+      [[6, 2], [7, 2]],
+      [[7, 2], [7, 1]],
+      [[7, 1], [7, 0]],
+      [[7, 0], [6, 0]],
+      [[6, 0], [5, 0]],
+      // Outer SE 2×2 sharing (5,5)
+      [[5, 5], [5, 6]],
+      [[5, 6], [5, 7]],
+      [[5, 7], [6, 7]],
+      [[6, 7], [7, 7]],
+      [[7, 7], [7, 6]],
+      [[7, 6], [7, 5]],
+      [[7, 5], [6, 5]],
+      [[6, 5], [5, 5]],
+    ],
+  },
 ];
 
 // ─── Pattern placement (centered in GRID_SIZE x GRID_SIZE) ──────────────────
@@ -258,6 +475,8 @@ const MiniPreview: React.FC<{ pattern: Pattern; active: boolean }> = ({ pattern,
 
 const KasutiEmbroidery: React.FC = () => {
   const [patternId, setPatternId] = useState<string>(PATTERNS[0].id);
+  const [customPattern, setCustomPattern] = useState<Pattern | null>(null);
+  const [editorOpen, setEditorOpen] = useState(false);
   const [currentVertex, setCurrentVertex] = useState<V | null>(null);
   const [startVertex, setStartVertex] = useState<V | null>(null);
   const [activeSide, setActiveSide] = useState<Side>('front');
@@ -267,10 +486,15 @@ const KasutiEmbroidery: React.FC = () => {
   const [completed, setCompleted] = useState(false);
   const celebratedRef = useRef(false);
 
+  const visiblePatterns = useMemo(
+    () => (customPattern ? [...PATTERNS, customPattern] : PATTERNS),
+    [customPattern]
+  );
+
   const placed = useMemo(() => {
-    const p = PATTERNS.find((x) => x.id === patternId) ?? PATTERNS[0];
+    const p = visiblePatterns.find((x) => x.id === patternId) ?? PATTERNS[0];
     return placePattern(p);
-  }, [patternId]);
+  }, [patternId, visiblePatterns]);
 
   const drawnFront = useMemo(() => {
     const s = new Set<EdgeKey>();
@@ -433,7 +657,7 @@ const KasutiEmbroidery: React.FC = () => {
             role="radiogroup"
             aria-label="Motif picker"
           >
-            {PATTERNS.map((p) => {
+            {visiblePatterns.map((p) => {
               const active = p.id === patternId;
               return (
                 <button
@@ -455,9 +679,36 @@ const KasutiEmbroidery: React.FC = () => {
                 </button>
               );
             })}
+
+            <button
+              type="button"
+              onClick={() => setEditorOpen(true)}
+              aria-label="Design your own motif"
+              className="shrink-0 flex flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-border p-2 transition-colors min-w-[88px] hover:border-primary/60 hover:bg-primary/5"
+            >
+              <div className="h-[60px] flex items-center justify-center">
+                <div className="w-9 h-9 rounded-full border-2 border-primary/60 flex items-center justify-center">
+                  <Plus className="w-5 h-5 text-primary" />
+                </div>
+              </div>
+              <span className="text-xs font-medium">Make your own</span>
+              <span className="text-[10px] text-muted-foreground">draw a motif</span>
+            </button>
           </div>
         </CardContent>
       </Card>
+
+      <PatternEditor
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
+        initial={customPattern}
+        onSave={(p) => {
+          setCustomPattern(p);
+          setPatternId(p.id);
+          resetTrace();
+          setEditorOpen(false);
+        }}
+      />
 
       {/* Status bar */}
       <div className="flex items-center justify-between gap-3 flex-wrap rounded-xl border bg-muted/40 p-3">
@@ -809,6 +1060,271 @@ const FabricPanel: React.FC<FabricPanelProps> = ({
         </div>
       </CardContent>
     </Card>
+  );
+};
+
+// ─── Pattern editor modal ──────────────────────────────────────────────────
+
+const EDITOR_SIZE = 14; // cells
+const EDITOR_CELL = 22; // px
+const EDITOR_PAD = 14;
+const EDITOR_DIM = EDITOR_SIZE * EDITOR_CELL + EDITOR_PAD * 2;
+
+function edgeListFromKeys(keys: Set<EdgeKey>): Array<readonly [V, V]> {
+  const out: Array<readonly [V, V]> = [];
+  for (const k of keys) {
+    const [a, b] = k.split('|');
+    const [r1, c1] = a.split(',').map(Number);
+    const [r2, c2] = b.split(',').map(Number);
+    out.push([[r1, c1] as V, [r2, c2] as V]);
+  }
+  return out;
+}
+
+function isConnected(edges: Array<readonly [V, V]>): boolean {
+  if (edges.length === 0) return false;
+  const adj = new Map<string, string[]>();
+  for (const [a, b] of edges) {
+    const ka = vKey(a);
+    const kb = vKey(b);
+    if (!adj.has(ka)) adj.set(ka, []);
+    if (!adj.has(kb)) adj.set(kb, []);
+    adj.get(ka)!.push(kb);
+    adj.get(kb)!.push(ka);
+  }
+  const start = adj.keys().next().value as string | undefined;
+  if (!start) return false;
+  const seen = new Set<string>([start]);
+  const queue = [start];
+  while (queue.length) {
+    const node = queue.shift()!;
+    for (const next of adj.get(node) ?? []) {
+      if (!seen.has(next)) {
+        seen.add(next);
+        queue.push(next);
+      }
+    }
+  }
+  return seen.size === adj.size;
+}
+
+function oddDegreeVertices(edges: Array<readonly [V, V]>): number {
+  const deg = new Map<string, number>();
+  for (const [a, b] of edges) {
+    deg.set(vKey(a), (deg.get(vKey(a)) ?? 0) + 1);
+    deg.set(vKey(b), (deg.get(vKey(b)) ?? 0) + 1);
+  }
+  let odd = 0;
+  for (const d of deg.values()) if (d % 2 !== 0) odd++;
+  return odd;
+}
+
+function normalizePattern(edges: Array<readonly [V, V]>): Pattern | null {
+  if (edges.length === 0) return null;
+  let minR = Infinity,
+    minC = Infinity,
+    maxR = -Infinity,
+    maxC = -Infinity;
+  for (const [a, b] of edges) {
+    for (const [r, c] of [a, b]) {
+      if (r < minR) minR = r;
+      if (r > maxR) maxR = r;
+      if (c < minC) minC = c;
+      if (c > maxC) maxC = c;
+    }
+  }
+  const shifted: Array<readonly [V, V]> = edges.map(([a, b]) => [
+    [a[0] - minR, a[1] - minC] as V,
+    [b[0] - minR, b[1] - minC] as V,
+  ]);
+  return {
+    id: 'custom',
+    title: 'Custom',
+    description: `${edges.length} stitches`,
+    bbox: [maxR - minR, maxC - minC],
+    edges: shifted,
+  };
+}
+
+interface PatternEditorProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  initial: Pattern | null;
+  onSave: (p: Pattern) => void;
+}
+
+const PatternEditor: React.FC<PatternEditorProps> = ({ open, onOpenChange, initial, onSave }) => {
+  const [edges, setEdges] = useState<Set<EdgeKey>>(new Set());
+
+  // When the modal opens, seed from the initial custom pattern (if any), centred in the
+  // editor grid. Resetting here avoids stale state between open/close cycles.
+  useEffect(() => {
+    if (!open) return;
+    if (!initial) {
+      setEdges(new Set());
+      return;
+    }
+    const [br, bc] = initial.bbox;
+    const offR = Math.max(0, Math.floor((EDITOR_SIZE - br) / 2));
+    const offC = Math.max(0, Math.floor((EDITOR_SIZE - bc) / 2));
+    const seed = new Set<EdgeKey>();
+    for (const [a, b] of initial.edges) {
+      const sa: V = [a[0] + offR, a[1] + offC];
+      const sb: V = [b[0] + offR, b[1] + offC];
+      seed.add(edgeKey(sa, sb));
+    }
+    setEdges(seed);
+  }, [open, initial]);
+
+  const toggleEdge = useCallback((a: V, b: V) => {
+    setEdges((prev) => {
+      const next = new Set(prev);
+      const k = edgeKey(a, b);
+      if (next.has(k)) next.delete(k);
+      else next.add(k);
+      return next;
+    });
+  }, []);
+
+  const edgeList = useMemo(() => edgeListFromKeys(edges), [edges]);
+  const connected = useMemo(() => isConnected(edgeList), [edgeList]);
+  const oddCount = useMemo(() => oddDegreeVertices(edgeList), [edgeList]);
+  const count = edges.size;
+
+  const allEdges: Array<[V, V]> = useMemo(() => {
+    const out: Array<[V, V]> = [];
+    for (let r = 0; r <= EDITOR_SIZE; r++) {
+      for (let c = 0; c < EDITOR_SIZE; c++) {
+        out.push([[r, c], [r, c + 1]]); // horizontal
+      }
+    }
+    for (let r = 0; r < EDITOR_SIZE; r++) {
+      for (let c = 0; c <= EDITOR_SIZE; c++) {
+        out.push([[r, c], [r + 1, c]]); // vertical
+      }
+    }
+    return out;
+  }, []);
+
+  const handleSave = useCallback(() => {
+    if (!connected) return;
+    const pattern = normalizePattern(edgeList);
+    if (!pattern) return;
+    // Main grid has GRID_SIZE cells; patterns larger than that will not fit.
+    const [br, bc] = pattern.bbox;
+    if (br > GRID_SIZE || bc > GRID_SIZE) return;
+    onSave(pattern);
+  }, [connected, edgeList, onSave]);
+
+  const handleClear = useCallback(() => setEdges(new Set()), []);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg md:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Design your own motif</DialogTitle>
+          <DialogDescription>
+            Click between two dots to add or remove a stitch line. The motif must be{' '}
+            <em>connected</em> for the puzzle to start. For a complete alternating tour, every
+            vertex should have an even number of incident lines.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex justify-center overflow-auto">
+          <svg
+            width={EDITOR_DIM}
+            height={EDITOR_DIM}
+            className="rounded-lg bg-card"
+            style={{ outline: '1px solid var(--border)' }}
+          >
+            {/* Grid dots */}
+            {Array.from({ length: (EDITOR_SIZE + 1) * (EDITOR_SIZE + 1) }).map((_, i) => {
+              const r = Math.floor(i / (EDITOR_SIZE + 1));
+              const c = i % (EDITOR_SIZE + 1);
+              return (
+                <circle
+                  key={`d${r}-${c}`}
+                  cx={EDITOR_PAD + c * EDITOR_CELL}
+                  cy={EDITOR_PAD + r * EDITOR_CELL}
+                  r={1}
+                  className="fill-muted-foreground/40"
+                />
+              );
+            })}
+
+            {/* Drawn edges */}
+            {edgeList.map(([a, b], i) => {
+              const ax = EDITOR_PAD + a[1] * EDITOR_CELL;
+              const ay = EDITOR_PAD + a[0] * EDITOR_CELL;
+              const bx = EDITOR_PAD + b[1] * EDITOR_CELL;
+              const by = EDITOR_PAD + b[0] * EDITOR_CELL;
+              return (
+                <line
+                  key={`e${i}`}
+                  x1={ax}
+                  y1={ay}
+                  x2={bx}
+                  y2={by}
+                  stroke="currentColor"
+                  strokeWidth={3}
+                  strokeLinecap="round"
+                  className="text-foreground"
+                />
+              );
+            })}
+
+            {/* Clickable hit areas */}
+            {allEdges.map(([a, b], i) => {
+              const horizontal = a[0] === b[0];
+              const x = EDITOR_PAD + Math.min(a[1], b[1]) * EDITOR_CELL;
+              const y = EDITOR_PAD + Math.min(a[0], b[0]) * EDITOR_CELL;
+              const w = horizontal ? EDITOR_CELL : 10;
+              const h = horizontal ? 10 : EDITOR_CELL;
+              return (
+                <rect
+                  key={`hit${i}`}
+                  x={horizontal ? x : x - 5}
+                  y={horizontal ? y - 5 : y}
+                  width={w}
+                  height={h}
+                  fill="transparent"
+                  onClick={() => toggleEdge(a, b)}
+                  className="cursor-pointer hover:fill-primary/10"
+                />
+              );
+            })}
+          </svg>
+        </div>
+
+        <div className="text-xs text-center space-y-0.5">
+          <p className="text-muted-foreground">{count} stitch{count === 1 ? '' : 'es'}</p>
+          {count > 0 && !connected && (
+            <p className="text-destructive">
+              Not connected — every drawn segment must reach every other segment.
+            </p>
+          )}
+          {count > 0 && connected && oddCount === 0 && (
+            <p className="text-success">
+              Connected and every vertex has even degree — a complete alternating tour exists.
+            </p>
+          )}
+          {count > 0 && connected && oddCount > 0 && (
+            <p className="text-amber-600 dark:text-amber-400">
+              Connected, but {oddCount} vertex{oddCount === 1 ? '' : 'es'} {oddCount === 1 ? 'has' : 'have'} odd degree — you may not be able to close the tour.
+            </p>
+          )}
+        </div>
+
+        <DialogFooter className="gap-2 sm:gap-2">
+          <Button variant="outline" onClick={handleClear} disabled={count === 0}>
+            Clear
+          </Button>
+          <Button onClick={handleSave} disabled={!connected}>
+            Use this motif
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 
