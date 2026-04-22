@@ -76,6 +76,124 @@ function vEqual(a: V | null, b: V | null): boolean {
   return a[0] === b[0] && a[1] === b[1];
 }
 
+// ─── GIF export ─────────────────────────────────────────────────────────────
+// Draws both fabric panels to an offscreen canvas and uses gifenc to encode
+// one frame per stitch (plus a hold at the start and end). The rendering
+// mirrors the on-screen SVG: grid dots, dashed pattern guides for undrawn
+// edges, drawn stitches in thread colour, and the current vertex dot. Kept
+// self-contained so it doesn't depend on the live DOM.
+
+const GIF_PANEL = 320; // px per fabric panel
+const GIF_GAP = 24;
+const GIF_LABEL_H = 36;
+const GIF_WIDTH = GIF_PANEL * 2 + GIF_GAP + 20;
+const GIF_HEIGHT = GIF_PANEL + GIF_LABEL_H + 20;
+
+function drawGifFrame(
+  ctx: CanvasRenderingContext2D,
+  placed: PlacedPattern,
+  stitchesUpTo: Stitch[],
+  frontColor: string,
+  backColor: string,
+  currentVertex: V | null,
+  startVertex: V | null,
+  activeSide: Side
+) {
+  const panelPad = 10;
+  const inner = GIF_PANEL - panelPad * 2;
+  const cellPx = inner / GRID_SIZE;
+
+  ctx.fillStyle = '#fdfcfa';
+  ctx.fillRect(0, 0, GIF_WIDTH, GIF_HEIGHT);
+
+  const drawPanel = (offsetX: number, side: Side) => {
+    const isActive = side === activeSide;
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = isActive ? '#d04a2b' : '#d8d4cc';
+    ctx.lineWidth = isActive ? 2 : 1;
+    ctx.fillRect(offsetX, 10, GIF_PANEL, GIF_PANEL);
+    ctx.strokeRect(offsetX + 0.5, 10.5, GIF_PANEL - 1, GIF_PANEL - 1);
+
+    const toCanvas = (v: V) => ({
+      x: offsetX + panelPad + v[1] * cellPx,
+      y: 10 + panelPad + v[0] * cellPx,
+    });
+
+    ctx.fillStyle = 'rgba(100,100,100,0.30)';
+    for (let r = 0; r <= GRID_SIZE; r++) {
+      for (let c = 0; c <= GRID_SIZE; c++) {
+        const { x, y } = toCanvas([r, c] as V);
+        ctx.beginPath();
+        ctx.arc(x, y, 0.8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    const drawnHere = new Set<EdgeKey>();
+    for (const s of stitchesUpTo) {
+      if (s.side === side) drawnHere.add(edgeKey(s.from, s.to));
+    }
+
+    ctx.strokeStyle = 'rgba(100,100,100,0.55)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([2, 3]);
+    for (const [a, b] of placed.edges) {
+      if (drawnHere.has(edgeKey(a, b))) continue;
+      const p = toCanvas(a);
+      const q = toCanvas(b);
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      ctx.lineTo(q.x, q.y);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+
+    ctx.strokeStyle = side === 'front' ? frontColor : backColor;
+    ctx.lineWidth = Math.max(2, cellPx * 0.14);
+    ctx.lineCap = 'round';
+    for (const s of stitchesUpTo) {
+      if (s.side !== side) continue;
+      const p = toCanvas(s.from);
+      const q = toCanvas(s.to);
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      ctx.lineTo(q.x, q.y);
+      ctx.stroke();
+    }
+
+    if (startVertex) {
+      const { x, y } = toCanvas(startVertex);
+      ctx.strokeStyle = '#171717';
+      ctx.lineWidth = 1.4;
+      ctx.setLineDash([2, 2]);
+      ctx.beginPath();
+      ctx.arc(x, y, 4.5, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    if (currentVertex) {
+      const { x, y } = toCanvas(currentVertex);
+      ctx.fillStyle = isActive ? '#d04a2b' : 'rgba(100,100,100,0.6)';
+      ctx.beginPath();
+      ctx.arc(x, y, 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.fillStyle = '#5C5C5C';
+    ctx.font = '600 14px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(
+      side === 'front' ? 'FRONT' : 'BACK',
+      offsetX + GIF_PANEL / 2,
+      GIF_PANEL + 30
+    );
+  };
+
+  drawPanel(10, 'front');
+  drawPanel(10 + GIF_PANEL + GIF_GAP, 'back');
+}
+
 // ─── Replay URL codec ───────────────────────────────────────────────────────
 // The payload captures just enough to reconstruct a completed tour: which
 // pattern (preset id, or "custom" with its edge list), the start vertex, and
@@ -841,6 +959,70 @@ const KasutiEmbroidery: React.FC = () => {
     window.open(tweet, '_blank', 'noopener,noreferrer');
   }, [buildReplayUrl, patternId, stitches.length, visiblePatterns]);
 
+  const [gifBusy, setGifBusy] = useState(false);
+  const exportGif = useCallback(async () => {
+    if (gifBusy) return;
+    if (!completed || !startVertex) return;
+    setGifBusy(true);
+    try {
+      const { GIFEncoder, quantize, applyPalette } = await import('gifenc');
+      const canvas = document.createElement('canvas');
+      canvas.width = GIF_WIDTH;
+      canvas.height = GIF_HEIGHT;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('canvas unavailable');
+
+      const encoder = GIFEncoder();
+      const totalFrames = stitches.length + 1;
+      // Timings: slightly longer hold on the first and last frames.
+      const frameDelayMs = 200;
+      const holdDelayMs = 900;
+
+      for (let k = 0; k <= stitches.length; k++) {
+        const stitchesUpTo = stitches.slice(0, k);
+        const side: Side =
+          k === 0 ? 'front' : stitches[k - 1].side === 'front' ? 'back' : 'front';
+        const cur = k === 0 ? startVertex : stitches[k - 1].to;
+        drawGifFrame(ctx, placed, stitchesUpTo, frontColor, backColor, cur, startVertex, side);
+        const { data } = ctx.getImageData(0, 0, GIF_WIDTH, GIF_HEIGHT);
+        const palette = quantize(data, 64);
+        const index = applyPalette(data, palette);
+        const delay = k === 0 || k === stitches.length ? holdDelayMs : frameDelayMs;
+        encoder.writeFrame(index, GIF_WIDTH, GIF_HEIGHT, { palette, delay });
+        // Yield once in a while so the UI doesn't lock up on long tours.
+        if (k % 8 === 0) await new Promise((r) => setTimeout(r, 0));
+      }
+      encoder.finish();
+      const buffer = encoder.bytes();
+      const blob = new Blob([buffer], { type: 'image/gif' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const name =
+        visiblePatterns.find((p) => p.id === patternId)?.title?.toLowerCase() ?? 'kasuti';
+      link.href = url;
+      link.download = `kasuti-${name}-${stitches.length}.gif`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      toast.success(`Saved ${totalFrames}-frame GIF (${(buffer.length / 1024).toFixed(0)} KB).`);
+    } catch (err) {
+      toast.error(`Could not export GIF${err instanceof Error ? `: ${err.message}` : ''}.`);
+    } finally {
+      setGifBusy(false);
+    }
+  }, [
+    gifBusy,
+    completed,
+    startVertex,
+    stitches,
+    placed,
+    frontColor,
+    backColor,
+    visiblePatterns,
+    patternId,
+  ]);
+
   // On first completion: confetti + kick off an autoplay replay from step 0.
   // When the tour is un-completed (undo/reset/pattern change), tear down replay.
   useEffect(() => {
@@ -1135,6 +1317,8 @@ const KasutiEmbroidery: React.FC = () => {
           onSpeedChange={setReplaySpeed}
           onCopyLink={copyReplayLink}
           onShareTweet={shareReplayOnX}
+          onExportGif={exportGif}
+          gifBusy={gifBusy}
         />
       )}
 
@@ -1211,6 +1395,8 @@ interface ReplayControlsProps {
   onSpeedChange: (speed: number) => void;
   onCopyLink: () => void;
   onShareTweet: () => void;
+  onExportGif: () => void;
+  gifBusy: boolean;
 }
 
 const REPLAY_SPEEDS = [0.5, 1, 2] as const;
@@ -1225,6 +1411,8 @@ const ReplayControls: React.FC<ReplayControlsProps> = ({
   onSpeedChange,
   onCopyLink,
   onShareTweet,
+  onExportGif,
+  gifBusy,
 }) => {
   const atStart = replayIdx <= 0;
   const atEnd = replayIdx >= totalStitches;
@@ -1253,6 +1441,10 @@ const ReplayControls: React.FC<ReplayControlsProps> = ({
           <Button variant="outline" size="sm" onClick={onShareTweet}>
             <Share2 className="w-4 h-4 mr-1" />
             Share
+          </Button>
+          <Button variant="outline" size="sm" onClick={onExportGif} disabled={gifBusy}>
+            <Download className="w-4 h-4 mr-1" />
+            {gifBusy ? 'Encoding…' : 'Save GIF'}
           </Button>
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             speed
