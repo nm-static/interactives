@@ -1095,6 +1095,10 @@ const KasutiEmbroidery: React.FC = () => {
     setCurrentVertex(from);
     setActiveSide(rebuilt.length % 2 === 0 ? 'front' : 'back');
     setStitches(rebuilt);
+    // Pre-arm the celebration flag so the completion effect leaves replayIdx
+    // at 0 and doesn't fire confetti — URL arrivals should land on an empty
+    // board and press play themselves to watch the tour get stitched in.
+    celebratedRef.current = true;
     setCompleted(true);
     hydratedRef.current = true;
   }, []);
