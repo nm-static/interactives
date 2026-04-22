@@ -765,8 +765,12 @@ const KasutiEmbroidery: React.FC = () => {
             motif alternately on the front (left) and back (right). Each stitch flips the fabric.
           </p>
           <p className="text-sm text-muted-foreground max-w-3xl mx-auto">
-            Equivalently: given the pattern graph, double every edge with two colours and find a
-            closed Eulerian tour that alternates colours at every step.
+            Kasuti is best experienced with thread and fabric, but if you want to experiment
+            with making some designs or just get a feel for the pathways the thread will take
+            when you don't have your materials handy, you can try emulating kasuti embroidery
+            below. Pick one of the premade examples or make, save, and share your own designs!
+            The editor does not currently support disjoint designs so make sure your patterns
+            are connected.
           </p>
         </CardContent>
       </Card>
