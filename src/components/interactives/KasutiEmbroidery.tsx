@@ -2146,6 +2146,48 @@ const PatternEditor: React.FC<PatternEditorProps> = ({ open, onOpenChange, initi
     URL.revokeObjectURL(url);
   }, [edgeList, title]);
 
+  const handleDownloadPng = useCallback(() => {
+    const pattern = normalizePattern(edgeList);
+    if (!pattern) return;
+    const trimmed = title.trim() || 'Custom';
+    const safeName =
+      trimmed.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'motif';
+    const [rows, cols] = pattern.bbox;
+    const span = Math.max(rows, cols, 1);
+    const cellPx = 800 / span;
+    const pad = 40;
+    const W = Math.round(cols * cellPx + pad * 2);
+    const H = Math.round(rows * cellPx + pad * 2);
+    const canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = '#171717';
+    ctx.lineWidth = Math.max(4, cellPx * 0.16);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    for (const [a, b] of pattern.edges) {
+      ctx.beginPath();
+      ctx.moveTo(pad + a[1] * cellPx, pad + a[0] * cellPx);
+      ctx.lineTo(pad + b[1] * cellPx, pad + b[0] * cellPx);
+      ctx.stroke();
+    }
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `kasuti-${safeName}-${pattern.edges.length}.png`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }, 'image/png');
+  }, [edgeList, title]);
+
   const handleUpload = useCallback(() => {
     fileInputRef.current?.click();
   }, []);
@@ -2312,7 +2354,7 @@ const PatternEditor: React.FC<PatternEditorProps> = ({ open, onOpenChange, initi
         />
 
         <DialogFooter className="flex-col-reverse sm:flex-row gap-2 sm:justify-between">
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" onClick={handleUpload}>
               <Upload className="w-4 h-4 mr-1" />
               Upload
@@ -2322,9 +2364,20 @@ const PatternEditor: React.FC<PatternEditorProps> = ({ open, onOpenChange, initi
               size="sm"
               onClick={handleDownload}
               disabled={count === 0}
+              title="Download as JSON (re-openable in the editor)"
             >
               <Download className="w-4 h-4 mr-1" />
-              Download
+              JSON
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDownloadPng}
+              disabled={count === 0}
+              title="Download the motif as a PNG image"
+            >
+              <Download className="w-4 h-4 mr-1" />
+              PNG
             </Button>
             <Button variant="outline" size="sm" onClick={handleClear} disabled={count === 0}>
               Clear
