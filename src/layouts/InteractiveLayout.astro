@@ -1,4 +1,7 @@
 ---
+import fs from "node:fs";
+import path from "node:path";
+
 import BaseHead from "@/components/BaseHead.astro";
 import { Footer } from "@/components/sections/footer";
 import Navbar from "@/components/sections/navbar";
@@ -21,11 +24,16 @@ interface Props {
 const { title, description, slug, themes, subcategory, tags, status } = Astro.props;
 const currentUrl = new URL(Astro.url.pathname, Astro.site).toString();
 const embedUrl = new URL(`/embed/${slug}`, Astro.site).toString();
+
+// If public/og/<slug>.png exists, use it as the preview card image; otherwise the
+// site-wide default in BaseHead applies.
+const ogCandidate = path.join(process.cwd(), "public", "og", `${slug}.png`);
+const ogImage = fs.existsSync(ogCandidate) ? `/og/${slug}.png` : undefined;
 ---
 
 <html lang="en">
   <head>
-    <BaseHead title={title} description={description} />
+    <BaseHead title={title} description={description} image={ogImage} />
   </head>
   <body class="flex min-h-screen flex-col antialiased">
     <Navbar client:load />
