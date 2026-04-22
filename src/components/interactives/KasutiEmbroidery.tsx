@@ -909,6 +909,56 @@ const KasutiEmbroidery: React.FC = () => {
           different route.
         </div>
       )}
+
+      <footer className="pt-2 text-center text-xs text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+        Find out more about Kasuti on the{' '}
+        <a
+          href="https://en.wikipedia.org/wiki/Kasuti"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline underline-offset-2 hover:text-foreground"
+        >
+          wikipedia page
+        </a>{' '}
+        and{' '}
+        <a
+          href="https://www.embroidery.rocksea.org/hand-embroidery/kasuti/kasuti-lesson-1/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline underline-offset-2 hover:text-foreground"
+        >
+          this nice tutorial
+        </a>
+        . I learned about Kasuti from Priyam when{' '}
+        <a
+          href="https://misc.neeldhara.courses/recreational-math/kasuti-embroidery/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline underline-offset-2 hover:text-foreground"
+        >
+          she taught a course
+        </a>{' '}
+        about it at IITGN. Priyam works as a Visiting Livelihood Development Researcher with
+        the Karunar Kheti Trust in Upper Assam and has founded{' '}
+        <a
+          href="https://guddicrafts.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline underline-offset-2 hover:text-foreground"
+        >
+          Guddi Crafts
+        </a>
+        , follow them on{' '}
+        <a
+          href="https://www.instagram.com/guddi.crafts/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline underline-offset-2 hover:text-foreground"
+        >
+          Instagram
+        </a>
+        !
+      </footer>
     </div>
   );
 };
