@@ -1,5 +1,5 @@
 import confetti from 'canvas-confetti';
-import { ChevronLeft, ChevronRight, Download, Plus, RotateCcw, Undo2, Upload } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, Pause, Play, Plus, RotateCcw, SkipBack, SkipForward, Undo2, Upload } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
@@ -613,6 +613,9 @@ const KasutiEmbroidery: React.FC = () => {
   const [frontColor, setFrontColor] = useState(FRONT_COLORS[0]);
   const [backColor, setBackColor] = useState(BACK_COLORS[0]);
   const [completed, setCompleted] = useState(false);
+  const [replayIdx, setReplayIdx] = useState(0);
+  const [replayPlaying, setReplayPlaying] = useState(false);
+  const [replaySpeed, setReplaySpeed] = useState(1); // 0.5 | 1 | 2
   const celebratedRef = useRef(false);
 
   const visiblePatterns = useMemo(
@@ -733,16 +736,72 @@ const KasutiEmbroidery: React.FC = () => {
     celebratedRef.current = false;
   }, [stitches]);
 
+  // On first completion: confetti + kick off an autoplay replay from step 0.
+  // When the tour is un-completed (undo/reset/pattern change), tear down replay.
   useEffect(() => {
     if (completed && !celebratedRef.current) {
       celebratedRef.current = true;
       confetti({ particleCount: 180, spread: 90, origin: { y: 0.6 } });
+      setReplayIdx(0);
+      setReplayPlaying(true);
+    } else if (!completed) {
+      setReplayIdx(0);
+      setReplayPlaying(false);
     }
   }, [completed]);
 
+  // Replay autoplay tick.
+  useEffect(() => {
+    if (!completed || !replayPlaying) return;
+    const id = setInterval(() => {
+      setReplayIdx((prev) => {
+        if (prev >= stitches.length) {
+          setReplayPlaying(false);
+          return prev;
+        }
+        return prev + 1;
+      });
+    }, 320 / replaySpeed);
+    return () => clearInterval(id);
+  }, [completed, replayPlaying, stitches.length, replaySpeed]);
+
+  // Effective view for rendering: during replay, clip stitches to replayIdx.
+  const effectiveStitches = useMemo(
+    () => (completed ? stitches.slice(0, replayIdx) : stitches),
+    [completed, stitches, replayIdx]
+  );
+  const effectiveDrawnFront = useMemo(() => {
+    if (!completed) return drawnFront;
+    const s = new Set<EdgeKey>();
+    for (const st of effectiveStitches) {
+      if (st.side === 'front') s.add(edgeKey(st.from, st.to));
+    }
+    return s;
+  }, [completed, effectiveStitches, drawnFront]);
+  const effectiveDrawnBack = useMemo(() => {
+    if (!completed) return drawnBack;
+    const s = new Set<EdgeKey>();
+    for (const st of effectiveStitches) {
+      if (st.side === 'back') s.add(edgeKey(st.from, st.to));
+    }
+    return s;
+  }, [completed, effectiveStitches, drawnBack]);
+  const effectiveCurrentVertex: V | null = completed
+    ? replayIdx === 0
+      ? startVertex
+      : stitches[replayIdx - 1].to
+    : currentVertex;
+  const effectiveActiveSide: Side = completed
+    ? replayIdx === 0
+      ? 'front'
+      : stitches[replayIdx - 1].side === 'front'
+        ? 'back'
+        : 'front'
+    : activeSide;
+
   const totalEdges = placed.edges.length;
-  const frontRemaining = totalEdges - drawnFront.size;
-  const backRemaining = totalEdges - drawnBack.size;
+  const frontRemaining = totalEdges - effectiveDrawnFront.size;
+  const backRemaining = totalEdges - effectiveDrawnBack.size;
   const deadEnd = !completed && currentVertex !== null && legalNextVertices.length === 0;
 
   return (
@@ -818,21 +877,21 @@ const KasutiEmbroidery: React.FC = () => {
                 : 'border-foreground/20 text-muted-foreground'
             }
           >
-            Front{activeSide === 'front' ? ' · active' : ''}
+            Front{effectiveActiveSide === 'front' ? ' · active' : ''}
           </Badge>
           <Badge
             variant="outline"
             className={
-              activeSide === 'back'
+              effectiveActiveSide === 'back'
                 ? 'border-foreground/60 text-foreground'
                 : 'border-foreground/20 text-muted-foreground'
             }
           >
-            Back{activeSide === 'back' ? ' · active' : ''}
+            Back{effectiveActiveSide === 'back' ? ' · active' : ''}
           </Badge>
           <span className="text-xs text-muted-foreground">
-            {stitches.length} stitch{stitches.length === 1 ? '' : 'es'} · front{' '}
-            {drawnFront.size}/{totalEdges} · back {drawnBack.size}/{totalEdges}
+            {effectiveStitches.length} stitch{effectiveStitches.length === 1 ? '' : 'es'} · front{' '}
+            {effectiveDrawnFront.size}/{totalEdges} · back {effectiveDrawnBack.size}/{totalEdges}
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -861,14 +920,14 @@ const KasutiEmbroidery: React.FC = () => {
           setColor={setFrontColor}
           palette={FRONT_COLORS}
           placed={placed}
-          currentVertex={currentVertex}
+          currentVertex={effectiveCurrentVertex}
           startVertex={startVertex}
-          drawn={drawnFront}
-          otherDrawn={drawnBack}
-          stitches={stitches}
+          drawn={effectiveDrawnFront}
+          otherDrawn={effectiveDrawnBack}
+          stitches={effectiveStitches}
           frontColor={frontColor}
           backColor={backColor}
-          activeSide={activeSide}
+          activeSide={effectiveActiveSide}
           onVertexClick={handleVertexClick}
           legalNext={legalNextVertices}
           canStartAt={canStartAt}
@@ -883,14 +942,14 @@ const KasutiEmbroidery: React.FC = () => {
           setColor={setBackColor}
           palette={BACK_COLORS}
           placed={placed}
-          currentVertex={currentVertex}
+          currentVertex={effectiveCurrentVertex}
           startVertex={startVertex}
-          drawn={drawnBack}
-          otherDrawn={drawnFront}
-          stitches={stitches}
+          drawn={effectiveDrawnBack}
+          otherDrawn={effectiveDrawnFront}
+          stitches={effectiveStitches}
           frontColor={frontColor}
           backColor={backColor}
-          activeSide={activeSide}
+          activeSide={effectiveActiveSide}
           onVertexClick={handleVertexClick}
           legalNext={legalNextVertices}
           canStartAt={canStartAt}
@@ -901,10 +960,15 @@ const KasutiEmbroidery: React.FC = () => {
       </div>
 
       {completed && (
-        <div className="text-center p-4 rounded-xl bg-green-100 dark:bg-green-900/30 border border-green-500 text-green-800 dark:text-green-200 font-semibold">
-          You ended where you started — both sides match exactly. A complete kasuti tour in{' '}
-          {stitches.length} stitches.
-        </div>
+        <ReplayControls
+          totalStitches={stitches.length}
+          replayIdx={replayIdx}
+          playing={replayPlaying}
+          speed={replaySpeed}
+          onIdxChange={setReplayIdx}
+          onPlayingChange={setReplayPlaying}
+          onSpeedChange={setReplaySpeed}
+        />
       )}
 
       {deadEnd && (
@@ -963,6 +1027,144 @@ const KasutiEmbroidery: React.FC = () => {
         </a>
         !
       </footer>
+    </div>
+  );
+};
+
+// ─── Replay controls ────────────────────────────────────────────────────────
+
+interface ReplayControlsProps {
+  totalStitches: number;
+  replayIdx: number;
+  playing: boolean;
+  speed: number; // 0.5 | 1 | 2
+  onIdxChange: (idx: number) => void;
+  onPlayingChange: (playing: boolean) => void;
+  onSpeedChange: (speed: number) => void;
+}
+
+const REPLAY_SPEEDS = [0.5, 1, 2] as const;
+
+const ReplayControls: React.FC<ReplayControlsProps> = ({
+  totalStitches,
+  replayIdx,
+  playing,
+  speed,
+  onIdxChange,
+  onPlayingChange,
+  onSpeedChange,
+}) => {
+  const atStart = replayIdx <= 0;
+  const atEnd = replayIdx >= totalStitches;
+
+  const handlePlay = () => {
+    if (atEnd) {
+      // If at the end, rewind and start over.
+      onIdxChange(0);
+      onPlayingChange(true);
+      return;
+    }
+    onPlayingChange(!playing);
+  };
+
+  return (
+    <div className="rounded-xl border border-green-500/60 bg-green-50 dark:bg-green-900/20 p-4 space-y-3">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <p className="text-sm font-semibold text-green-800 dark:text-green-200">
+          Tour complete in {totalStitches} stitches — replay below.
+        </p>
+        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          speed
+          {REPLAY_SPEEDS.map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => onSpeedChange(s)}
+              className={`px-2 py-0.5 rounded-md font-mono ${
+                s === speed
+                  ? 'bg-foreground text-background'
+                  : 'hover:bg-muted'
+              }`}
+            >
+              {s === 1 ? '1×' : `${s}×`}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => {
+            onPlayingChange(false);
+            onIdxChange(0);
+          }}
+          disabled={atStart}
+          aria-label="Jump to start"
+        >
+          <SkipBack className="w-4 h-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => {
+            onPlayingChange(false);
+            onIdxChange(Math.max(0, replayIdx - 1));
+          }}
+          disabled={atStart}
+          aria-label="Previous stitch"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </Button>
+        <Button
+          variant="default"
+          size="icon"
+          onClick={handlePlay}
+          aria-label={playing ? 'Pause replay' : 'Play replay'}
+        >
+          {playing ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => {
+            onPlayingChange(false);
+            onIdxChange(Math.min(totalStitches, replayIdx + 1));
+          }}
+          disabled={atEnd}
+          aria-label="Next stitch"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => {
+            onPlayingChange(false);
+            onIdxChange(totalStitches);
+          }}
+          disabled={atEnd}
+          aria-label="Jump to end"
+        >
+          <SkipForward className="w-4 h-4" />
+        </Button>
+        <input
+          type="range"
+          min={0}
+          max={totalStitches}
+          value={replayIdx}
+          onChange={(e) => {
+            onPlayingChange(false);
+            onIdxChange(Number(e.target.value));
+          }}
+          className="flex-1 accent-primary"
+          aria-label="Replay scrubber"
+        />
+        <span className="font-mono text-xs tabular-nums text-muted-foreground shrink-0">
+          {replayIdx} / {totalStitches}
+        </span>
+      </div>
     </div>
   );
 };
