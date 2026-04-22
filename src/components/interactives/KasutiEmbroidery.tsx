@@ -61,7 +61,12 @@ function vKey(v: V): string {
 function isNeighbor(a: V, b: V): boolean {
   const dr = Math.abs(a[0] - b[0]);
   const dc = Math.abs(a[1] - b[1]);
-  return (dr === 1 && dc === 0) || (dr === 0 && dc === 1);
+  // Orthogonal unit step or diagonal unit step.
+  return (
+    (dr === 1 && dc === 0) ||
+    (dr === 0 && dc === 1) ||
+    (dr === 1 && dc === 1)
+  );
 }
 
 function vEqual(a: V | null, b: V | null): boolean {
@@ -1314,10 +1319,17 @@ function parsePatternFile(raw: string): Pattern | null {
         typeof c2 !== 'number'
       )
         return null;
-      // Only orthogonal unit-length segments are valid.
+      // Orthogonal or diagonal unit-length segments are valid.
       const dr = Math.abs(r1 - r2);
       const dc = Math.abs(c1 - c2);
-      if (!((dr === 1 && dc === 0) || (dr === 0 && dc === 1))) return null;
+      if (
+        !(
+          (dr === 1 && dc === 0) ||
+          (dr === 0 && dc === 1) ||
+          (dr === 1 && dc === 1)
+        )
+      )
+        return null;
       edges.push([[r1, c1] as V, [r2, c2] as V]);
     }
     const normalized = normalizePattern(edges);
@@ -1359,16 +1371,30 @@ const PatternEditor: React.FC<PatternEditorProps> = ({ open, onOpenChange, initi
   const connected = useMemo(() => isConnected(edgeList), [edgeList]);
   const count = edges.size;
 
-  const allEdges: Array<[V, V]> = useMemo(() => {
+  // Orthogonal edges are painted first so they stay on top (clicks near a vertex
+  // prefer the straight segment); diagonals sit underneath and catch clicks in
+  // the middle of each cell.
+  const orthogonalEdges: Array<[V, V]> = useMemo(() => {
     const out: Array<[V, V]> = [];
     for (let r = 0; r <= EDITOR_SIZE; r++) {
       for (let c = 0; c < EDITOR_SIZE; c++) {
-        out.push([[r, c], [r, c + 1]]); // horizontal
+        out.push([[r, c], [r, c + 1]]);
       }
     }
     for (let r = 0; r < EDITOR_SIZE; r++) {
       for (let c = 0; c <= EDITOR_SIZE; c++) {
-        out.push([[r, c], [r + 1, c]]); // vertical
+        out.push([[r, c], [r + 1, c]]);
+      }
+    }
+    return out;
+  }, []);
+
+  const diagonalEdges: Array<[V, V]> = useMemo(() => {
+    const out: Array<[V, V]> = [];
+    for (let r = 0; r < EDITOR_SIZE; r++) {
+      for (let c = 0; c < EDITOR_SIZE; c++) {
+        out.push([[r, c], [r + 1, c + 1]]); // ╲
+        out.push([[r, c + 1], [r + 1, c]]); // ╱
       }
     }
     return out;
@@ -1493,18 +1519,40 @@ const PatternEditor: React.FC<PatternEditorProps> = ({ open, onOpenChange, initi
               );
             })}
 
-            {/* Clickable hit areas */}
-            {allEdges.map(([a, b], i) => {
+            {/* Hit areas — diagonals underneath (catch clicks in cell centre),
+                orthogonals on top (catch clicks near each edge). */}
+            {diagonalEdges.map(([a, b], i) => {
+              const ax = EDITOR_PAD + a[1] * EDITOR_CELL;
+              const ay = EDITOR_PAD + a[0] * EDITOR_CELL;
+              const bx = EDITOR_PAD + b[1] * EDITOR_CELL;
+              const by = EDITOR_PAD + b[0] * EDITOR_CELL;
+              return (
+                <line
+                  key={`dhit${i}`}
+                  x1={ax}
+                  y1={ay}
+                  x2={bx}
+                  y2={by}
+                  stroke="transparent"
+                  strokeWidth={8}
+                  strokeLinecap="butt"
+                  pointerEvents="stroke"
+                  onClick={() => toggleEdge(a, b)}
+                  className="cursor-pointer hover:stroke-primary/15"
+                />
+              );
+            })}
+            {orthogonalEdges.map(([a, b], i) => {
               const horizontal = a[0] === b[0];
               const x = EDITOR_PAD + Math.min(a[1], b[1]) * EDITOR_CELL;
               const y = EDITOR_PAD + Math.min(a[0], b[0]) * EDITOR_CELL;
-              const w = horizontal ? EDITOR_CELL : 10;
-              const h = horizontal ? 10 : EDITOR_CELL;
+              const w = horizontal ? EDITOR_CELL : 8;
+              const h = horizontal ? 8 : EDITOR_CELL;
               return (
                 <rect
                   key={`hit${i}`}
-                  x={horizontal ? x : x - 5}
-                  y={horizontal ? y - 5 : y}
+                  x={horizontal ? x : x - 4}
+                  y={horizontal ? y - 4 : y}
                   width={w}
                   height={h}
                   fill="transparent"
