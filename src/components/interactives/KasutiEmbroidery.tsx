@@ -14,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Toaster as SonnerToaster } from '@/components/ui/sonner';
 
@@ -220,19 +221,19 @@ function b64urlDecode(s: string): string {
 }
 
 function encodeReplay(
-  patternId: string,
-  customPattern: Pattern | null,
+  pattern: Pattern,
   startVertex: V,
   stitches: Stitch[]
 ): string {
+  const isCustom = !PATTERNS.some((p) => p.id === pattern.id);
   const payload: ReplayPayload = {
     v: 1,
-    p: patternId,
+    p: isCustom ? 'custom' : pattern.id,
     s: [startVertex[0], startVertex[1]],
     t: stitches.map((st) => [st.to[0], st.to[1]]),
   };
-  if (patternId === 'custom' && customPattern) {
-    payload.e = customPattern.edges.map(([a, b]) => [
+  if (isCustom) {
+    payload.e = pattern.edges.map(([a, b]) => [
       [a[0], a[1]],
       [b[0], b[1]],
     ]);
@@ -677,12 +678,22 @@ const MiniPreview: React.FC<{ pattern: Pattern; active: boolean }> = ({ pattern,
 
 interface MotifReelProps {
   patterns: Pattern[];
+  customPatternIds: string[];
   activeId: string;
   onSelect: (id: string) => void;
+  onEditCustom: (id: string) => void;
   onOpenEditor: () => void;
 }
 
-const MotifReel: React.FC<MotifReelProps> = ({ patterns, activeId, onSelect, onOpenEditor }) => {
+const MotifReel: React.FC<MotifReelProps> = ({
+  patterns,
+  customPatternIds,
+  activeId,
+  onSelect,
+  onEditCustom,
+  onOpenEditor,
+}) => {
+  const customIdSet = useMemo(() => new Set(customPatternIds), [customPatternIds]);
   const trackRef = useRef<HTMLDivElement | null>(null);
   const [atStart, setAtStart] = useState(true);
   const [atEnd, setAtEnd] = useState(false);
@@ -726,12 +737,14 @@ const MotifReel: React.FC<MotifReelProps> = ({ patterns, activeId, onSelect, onO
       >
         {patterns.map((p) => {
           const active = p.id === activeId;
+          const isCustom = customIdSet.has(p.id);
           return (
             <button
               key={p.id}
               role="radio"
               aria-checked={active}
-              onClick={() => onSelect(p.id)}
+              onClick={() => (isCustom ? onEditCustom(p.id) : onSelect(p.id))}
+              title={isCustom ? 'Click to edit or rename this motif' : p.title}
               className={`shrink-0 flex flex-col items-center gap-1 rounded-lg border p-2 transition-colors min-w-[92px] ${
                 active
                   ? 'border-primary bg-primary/5 text-foreground'
@@ -742,7 +755,9 @@ const MotifReel: React.FC<MotifReelProps> = ({ patterns, activeId, onSelect, onO
                 <MiniPreview pattern={p} active={active} />
               </div>
               <span className="text-xs font-medium">{p.title}</span>
-              <span className="text-[10px] text-muted-foreground">{p.description}</span>
+              <span className="text-[10px] text-muted-foreground">
+                {isCustom ? 'click to edit' : p.description}
+              </span>
             </button>
           );
         })}
@@ -796,8 +811,10 @@ const MotifReel: React.FC<MotifReelProps> = ({ patterns, activeId, onSelect, onO
 
 const KasutiEmbroidery: React.FC = () => {
   const [patternId, setPatternId] = useState<string>(PATTERNS[0].id);
-  const [customPattern, setCustomPattern] = useState<Pattern | null>(null);
+  const [customPatterns, setCustomPatterns] = useState<Pattern[]>([]);
   const [editorOpen, setEditorOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null); // null = new motif
+  const customCounterRef = useRef(0);
   const [currentVertex, setCurrentVertex] = useState<V | null>(null);
   const [startVertex, setStartVertex] = useState<V | null>(null);
   const [activeSide, setActiveSide] = useState<Side>('front');
@@ -811,9 +828,19 @@ const KasutiEmbroidery: React.FC = () => {
   const celebratedRef = useRef(false);
 
   const visiblePatterns = useMemo(
-    () => (customPattern ? [...PATTERNS, customPattern] : PATTERNS),
-    [customPattern]
+    () => [...PATTERNS, ...customPatterns],
+    [customPatterns]
   );
+
+  const editingPattern = useMemo(
+    () => (editingId ? customPatterns.find((p) => p.id === editingId) ?? null : null),
+    [editingId, customPatterns]
+  );
+
+  const nextCustomId = useCallback(() => {
+    customCounterRef.current += 1;
+    return `custom-${customCounterRef.current}`;
+  }, []);
 
   const placed = useMemo(() => {
     const p = visiblePatterns.find((x) => x.id === patternId) ?? PATTERNS[0];
@@ -931,12 +958,14 @@ const KasutiEmbroidery: React.FC = () => {
   // Build a shareable URL that hydrates to this tour on arrival.
   const buildReplayUrl = useCallback((): string | null => {
     if (!completed || !startVertex || typeof window === 'undefined') return null;
-    const encoded = encodeReplay(patternId, customPattern, startVertex, stitches);
+    const pattern = visiblePatterns.find((p) => p.id === patternId);
+    if (!pattern) return null;
+    const encoded = encodeReplay(pattern, startVertex, stitches);
     const url = new URL(window.location.href);
     url.search = '';
     url.searchParams.set('replay', encoded);
     return url.toString();
-  }, [completed, startVertex, patternId, customPattern, stitches]);
+  }, [completed, startVertex, patternId, visiblePatterns, stitches]);
 
   const copyReplayLink = useCallback(async () => {
     const url = buildReplayUrl();
@@ -1054,6 +1083,7 @@ const KasutiEmbroidery: React.FC = () => {
     if (!payload) return;
 
     let targetPattern: Pattern | null = null;
+    let targetPatternId = payload.p;
     if (payload.p === 'custom' && payload.e) {
       const customEdges: Array<readonly [V, V]> = payload.e.map(([a, b]) => [
         [a[0], a[1]] as V,
@@ -1066,20 +1096,22 @@ const KasutiEmbroidery: React.FC = () => {
         maxR = Math.max(maxR, a[0], b[0]);
         maxC = Math.max(maxC, a[1], b[1]);
       }
+      const hydratedId = nextCustomId();
       targetPattern = {
-        id: 'custom',
-        title: 'Custom',
+        id: hydratedId,
+        title: 'Shared motif',
         description: `${customEdges.length} stitches`,
         bbox: [maxR, maxC],
         edges: customEdges,
       };
-      setCustomPattern(targetPattern);
+      targetPatternId = hydratedId;
+      setCustomPatterns((prev) => [...prev, targetPattern!]);
     } else {
       targetPattern = PATTERNS.find((p) => p.id === payload.p) ?? null;
     }
     if (!targetPattern) return;
 
-    setPatternId(payload.p);
+    setPatternId(targetPatternId);
 
     // Reconstruct stitches: start at payload.s, alternate sides, each entry's
     // `to` is the corresponding tour point.
@@ -1181,8 +1213,11 @@ const KasutiEmbroidery: React.FC = () => {
             with making some designs or just get a feel for the pathways the thread will take
             when you don't have your materials handy, you can try emulating kasuti embroidery
             below. Pick one of the premade examples or make, save, and share your own designs!
+          </p>
+          <p className="text-sm font-medium text-foreground max-w-3xl mx-auto">
             The editor does not currently support disjoint designs so make sure your patterns
-            are connected.
+            are connected. The browser will not save your designs, so be sure to download them
+            separately if you want to come back to them later!
           </p>
         </CardContent>
       </Card>
@@ -1200,21 +1235,48 @@ const KasutiEmbroidery: React.FC = () => {
         <CardContent>
           <MotifReel
             patterns={visiblePatterns}
+            customPatternIds={customPatterns.map((p) => p.id)}
             activeId={patternId}
             onSelect={selectPattern}
-            onOpenEditor={() => setEditorOpen(true)}
+            onEditCustom={(id) => {
+              setEditingId(id);
+              setEditorOpen(true);
+            }}
+            onOpenEditor={() => {
+              setEditingId(null);
+              setEditorOpen(true);
+            }}
           />
         </CardContent>
       </Card>
 
       <PatternEditor
         open={editorOpen}
-        onOpenChange={setEditorOpen}
-        initial={customPattern}
+        onOpenChange={(open) => {
+          setEditorOpen(open);
+          if (!open) setEditingId(null);
+        }}
+        initial={editingPattern}
         onSave={(p) => {
-          setCustomPattern(p);
-          setPatternId(p.id);
+          const title = p.title?.trim() || (editingPattern?.title ?? 'Custom');
+          if (editingId) {
+            // Update existing motif in place.
+            const updated: Pattern = { ...p, id: editingId, title };
+            setCustomPatterns((prev) =>
+              prev.map((m) => (m.id === editingId ? updated : m))
+            );
+            setPatternId(editingId);
+          } else {
+            // Brand new motif.
+            const id = nextCustomId();
+            const defaultTitle =
+              title && title !== 'Custom' ? title : `Custom ${customCounterRef.current}`;
+            const created: Pattern = { ...p, id, title: defaultTitle };
+            setCustomPatterns((prev) => [...prev, created]);
+            setPatternId(id);
+          }
           resetTrace();
+          setEditingId(null);
           setEditorOpen(false);
         }}
       />
@@ -1985,6 +2047,7 @@ function parsePatternFile(raw: string): Pattern | null {
 
 const PatternEditor: React.FC<PatternEditorProps> = ({ open, onOpenChange, initial, onSave }) => {
   const [edges, setEdges] = useState<Set<EdgeKey>>(new Set());
+  const [title, setTitle] = useState<string>('');
   const [loadError, setLoadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -1995,9 +2058,11 @@ const PatternEditor: React.FC<PatternEditorProps> = ({ open, onOpenChange, initi
     setLoadError(null);
     if (!initial) {
       setEdges(new Set());
+      setTitle('');
       return;
     }
     setEdges(centeredEdgeSetFromPattern(initial));
+    setTitle(initial.title ?? '');
   }, [open, initial]);
 
   const toggleEdge = useCallback((a: V, b: V) => {
@@ -2050,18 +2115,20 @@ const PatternEditor: React.FC<PatternEditorProps> = ({ open, onOpenChange, initi
     // Main grid has GRID_SIZE cells; patterns larger than that will not fit.
     const [br, bc] = pattern.bbox;
     if (br > GRID_SIZE || bc > GRID_SIZE) return;
-    onSave(pattern);
-  }, [connected, edgeList, onSave]);
+    const trimmed = title.trim();
+    onSave({ ...pattern, title: trimmed || 'Custom' });
+  }, [connected, edgeList, title, onSave]);
 
   const handleClear = useCallback(() => setEdges(new Set()), []);
 
   const handleDownload = useCallback(() => {
     const pattern = normalizePattern(edgeList);
     if (!pattern) return;
+    const trimmed = title.trim() || 'Custom';
     const payload: KasutiPatternFile = {
       kind: 'kasuti-pattern',
       version: 1,
-      title: 'Custom',
+      title: trimmed,
       edges: pattern.edges.map(([a, b]) => [
         [a[0], a[1]],
         [b[0], b[1]],
@@ -2070,13 +2137,14 @@ const PatternEditor: React.FC<PatternEditorProps> = ({ open, onOpenChange, initi
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
+    const safeName = trimmed.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'motif';
     link.href = url;
-    link.download = `kasuti-motif-${pattern.edges.length}.json`;
+    link.download = `kasuti-${safeName}-${pattern.edges.length}.json`;
     document.body.appendChild(link);
     link.click();
     link.remove();
     URL.revokeObjectURL(url);
-  }, [edgeList]);
+  }, [edgeList, title]);
 
   const handleUpload = useCallback(() => {
     fileInputRef.current?.click();
@@ -2103,6 +2171,7 @@ const PatternEditor: React.FC<PatternEditorProps> = ({ open, onOpenChange, initi
       }
       setLoadError(null);
       setEdges(centeredEdgeSetFromPattern(parsed));
+      setTitle(parsed.title ?? '');
     };
     reader.onerror = () => setLoadError('Could not read that file.');
     reader.readAsText(file);
@@ -2112,12 +2181,26 @@ const PatternEditor: React.FC<PatternEditorProps> = ({ open, onOpenChange, initi
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg md:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Design your own motif</DialogTitle>
+          <DialogTitle>{initial ? 'Edit motif' : 'Design your own motif'}</DialogTitle>
           <DialogDescription>
             Click between two dots to add or remove a stitch line. As long as your motif is{' '}
             <em>connected</em>, an alternating kasuti tour exists on it.
           </DialogDescription>
         </DialogHeader>
+
+        <div className="flex items-center gap-2">
+          <Label htmlFor="kasuti-motif-title" className="text-xs text-muted-foreground shrink-0">
+            Name
+          </Label>
+          <Input
+            id="kasuti-motif-title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Custom"
+            maxLength={40}
+            className="h-8 text-sm"
+          />
+        </div>
 
         <div className="flex justify-center overflow-auto">
           <svg
