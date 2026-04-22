@@ -974,9 +974,10 @@ const KasutiEmbroidery: React.FC = () => {
 
       const encoder = GIFEncoder();
       const totalFrames = stitches.length + 1;
-      // Timings: slightly longer hold on the first and last frames.
-      const frameDelayMs = 200;
-      const holdDelayMs = 900;
+      // Export at 0.5× the on-screen replay pace — easier to follow in a loop
+      // and friendlier when the GIF auto-plays in a social-media preview.
+      const frameDelayMs = 400;
+      const holdDelayMs = 1200;
 
       for (let k = 0; k <= stitches.length; k++) {
         const stitchesUpTo = stitches.slice(0, k);
@@ -1023,19 +1024,20 @@ const KasutiEmbroidery: React.FC = () => {
     patternId,
   ]);
 
-  // On first completion: confetti + kick off an autoplay replay from step 0.
+  // On first completion: confetti + leave both fabrics showing the final tour.
+  // Replay stays paused until the user presses play or scrubs the slider.
   // When the tour is un-completed (undo/reset/pattern change), tear down replay.
   useEffect(() => {
     if (completed && !celebratedRef.current) {
       celebratedRef.current = true;
       confetti({ particleCount: 180, spread: 90, origin: { y: 0.6 } });
-      setReplayIdx(0);
-      setReplayPlaying(true);
+      setReplayIdx(stitches.length);
+      setReplayPlaying(false);
     } else if (!completed) {
       setReplayIdx(0);
       setReplayPlaying(false);
     }
-  }, [completed]);
+  }, [completed, stitches.length]);
 
   // Hydrate from ?replay=... on mount. Runs once client-side; if the payload
   // parses and the pattern is known (preset or carried inline), rebuild the
