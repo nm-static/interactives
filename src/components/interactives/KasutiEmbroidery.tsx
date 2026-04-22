@@ -1129,19 +1129,44 @@ const FabricPanel: React.FC<FabricPanelProps> = ({
               />
             )}
 
-            {/* Current vertex marker — full colour on the active side, grey on the other */}
-            {currentVertex && (
-              <circle
-                cx={toXY(currentVertex).x}
-                cy={toXY(currentVertex).y}
-                r={4}
-                className={
-                  isActive
-                    ? 'fill-green-600 dark:fill-green-400'
-                    : 'fill-muted-foreground/60'
+            {/* Current vertex marker — red on the active side, muted grey on the other.
+                A ring briefly expands each time the marker moves or the side flips
+                (the browser won't let us move the OS mouse pointer, so this draws
+                the eye instead). */}
+            {currentVertex &&
+              (() => {
+                const { x, y } = toXY(currentVertex);
+                if (!isActive) {
+                  return (
+                    <circle cx={x} cy={y} r={4} className="fill-muted-foreground/60" />
+                  );
                 }
-              />
-            )}
+                return (
+                  <g key={`cur-${side}-${vKey(currentVertex)}`}>
+                    <circle cx={x} cy={y} r={4} className="fill-primary/60">
+                      <animate
+                        attributeName="r"
+                        from="4"
+                        to="18"
+                        dur="0.65s"
+                        begin="0s"
+                        repeatCount="1"
+                        fill="freeze"
+                      />
+                      <animate
+                        attributeName="opacity"
+                        from="0.6"
+                        to="0"
+                        dur="0.65s"
+                        begin="0s"
+                        repeatCount="1"
+                        fill="freeze"
+                      />
+                    </circle>
+                    <circle cx={x} cy={y} r={4} className="fill-primary" />
+                  </g>
+                );
+              })()}
 
             {/* Click overlays: only active side accepts clicks */}
             {isActive &&
